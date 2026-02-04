@@ -258,7 +258,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                         {field.required && <span className="text-primary ml-1">*</span>}
                                     </label>
                                 ) : (
-                                    <label htmlFor={field.id} className="block text-lg text-gray-400 text-right font-waheed">
+                                    <label htmlFor={field.id} className="block text-2xl text-gray-400 text-right font-waheed">
                                         {label}
                                         {field.required && <span className="text-primary mr-1">*</span>}
                                     </label>
@@ -268,7 +268,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                 {field.type === 'consent' && (
                                     <div className="space-y-4 bg-white/5 p-4 rounded-lg border border-white/10" dir="rtl">
                                         <div>
-                                            <h3 className="text-xl text-gray-400 font-waheed mb-3">
+                                            <h3 className="text-2xl text-gray-400 font-waheed mb-3">
                                                 {label}
                                                 {field.required && <span className="text-primary mr-1">*</span>}
                                             </h3>
@@ -277,7 +277,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                             )}
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <label htmlFor={field.id} className="text-lg text-white font-waheed">
+                                            <label htmlFor={field.id} className="text-xl text-white font-waheed">
                                                 ޤަބޫލް
                                             </label>
                                             <div className="flex h-6 items-center">
@@ -466,7 +466,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
                                 {field.type === 'text_block' && (
                                     <div className="my-6 border-r-2 border-primary/20 pr-4 py-2 text-right">
-                                        <h3 className="text-xl text-white mb-2 font-waheed">{label}</h3>
+                                        <h3 className="text-2xl text-white mb-2 font-waheed">{label}</h3>
                                         {content && (
                                             <p className="text-gray-400 whitespace-pre-wrap leading-relaxed font-faruma">
                                                 {content}

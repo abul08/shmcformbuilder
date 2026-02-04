@@ -61,15 +61,7 @@
 
 @layer utilities {
 
-  /* MVAWaheed - strictly for Headings */
-  .font-waheed {
-    font-weight: normal !important;
-  }
 
-  /* Faruma - for body text, inputs, labels */
-  .font-faruma {
-    font-weight: normal !important;
-  }
 
   /* Hide scrollbar but keep functionality */
   .no-scrollbar::-webkit-scrollbar {
