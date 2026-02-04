@@ -92,99 +92,107 @@ export default function FormList({ initialForms }: { initialForms: Form[] }) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {forms.map((form) => (
-        <div
-          key={form.id}
-          onClick={(e) => handleCardClick(form.id, e)}
-          className="group relative rounded-lg bg-white/5 ring-1 ring-white/10 hover:ring-white/20 transition-all cursor-pointer overflow-hidden"
-        >
-          <div className="p-5">
-            <div className="flex justify-between items-start gap-2 mb-3">
-              <h3 className="text-base font-semibold text-white truncate group-hover:text-primary transition-colors font-faruma" dir="auto">
-                {form.title}
-              </h3>
-              <Badge variant={form.is_published ? 'success' : 'secondary'} className="shrink-0">
-                {form.is_published ? 'Live' : 'Draft'}
-              </Badge>
-            </div>
+      {forms.map((form) => {
+        const isDhivehiTitle = /[\u0780-\u07BF]/.test(form.title || '');
+        const titleClass = isDhivehiTitle ? 'font-waheed text-right text-lg' : 'text-base font-inter font-semibold text-left';
 
-            <p className="text-sm text-gray-400 line-clamp-2 min-h-[2.5rem] mb-4 font-faruma" dir="auto">
-              {form.description || 'No description provided'}
-            </p>
+        const isDhivehiDesc = /[\u0780-\u07BF]/.test(form.description || '');
+        const descClass = isDhivehiDesc ? 'font-faruma text-right leading-relaxed' : 'font-inter text-left';
 
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Edit2 className="h-3 w-3" />
-              <span>{new Date(form.updated_at).toLocaleDateString()}</span>
-              {(form as any).form_responses && (form as any).form_responses[0] && (
-                <>
-                  <span className="mx-1">•</span>
-                  <div className="flex items-center gap-1">
-                    <MessageSquare className="h-3 w-3" />
-                    <span>{(form as any).form_responses[0].count} responses</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+        return (
+          <div
+            key={form.id}
+            onClick={(e) => handleCardClick(form.id, e)}
+            className="group relative rounded-lg bg-white/5 ring-1 ring-white/10 hover:ring-white/20 transition-all cursor-pointer overflow-hidden"
+          >
+            <div className="p-5">
+              <div className="flex justify-between items-start gap-2 mb-3">
+                <h3 className={` text-gray-300 truncate group-hover:text-primary transition-colors ${titleClass}`} dir="auto">
+                  {form.title}
+                </h3>
+                <Badge variant={form.is_published ? 'success' : 'secondary'} className="shrink-0">
+                  {form.is_published ? 'Live' : 'Draft'}
+                </Badge>
+              </div>
 
-          <div className="border-t border-white/10 bg-white/5 px-3 py-2 flex justify-between gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-            <div className="flex gap-1">
-              <Link
-                href={`/forms/${form.id}/edit`}
-                className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                title="Edit Form"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Link>
-              <Link
-                href={`/forms/${form.id}/responses`}
-                className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                title="View Responses"
-              >
-                <MessageSquare className="h-4 w-4" />
-              </Link>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDuplicate(form.id)
-                }}
-                disabled={duplicatingId === form.id}
-                className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Duplicate"
-              >
-                {duplicatingId === form.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Copy className="h-4 w-4" />
+              <p className={`text-sm text-gray-400 line-clamp-2 min-h-[2.5rem] mb-4 ${descClass}`} dir="auto">
+                {form.description || 'No description provided'}
+              </p>
+
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <Edit2 className="h-3 w-3" />
+                <span>{new Date(form.updated_at).toLocaleDateString()}</span>
+                {(form as any).form_responses && (form as any).form_responses[0] && (
+                  <>
+                    <span className="mx-1">•</span>
+                    <div className="flex items-center gap-1">
+                      <MessageSquare className="h-3 w-3" />
+                      <span>{(form as any).form_responses[0].count} responses</span>
+                    </div>
+                  </>
                 )}
-              </button>
+              </div>
             </div>
 
-            <div className="flex gap-1">
-              {form.is_published && (
+            <div className="border-t border-white/10 bg-white/5 px-3 py-2 flex justify-between gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1">
                 <Link
-                  href={`/f/${form.slug}`}
-                  target="_blank"
-                  className="rounded p-1.5 hover:bg-white/10 text-primary hover:text-primary/80 transition-colors"
-                  title="View Public Form"
+                  href={`/forms/${form.id}/edit`}
+                  className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                  title="Edit Form"
                 >
-                  <ExternalLink className="h-4 w-4" />
+                  <Edit2 className="h-4 w-4" />
                 </Link>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDelete(form.id)
-                }}
-                className="rounded p-1.5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
-                title="Delete"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+                <Link
+                  href={`/forms/${form.id}/responses`}
+                  className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                  title="View Responses"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </Link>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDuplicate(form.id)
+                  }}
+                  disabled={duplicatingId === form.id}
+                  className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Duplicate"
+                >
+                  {duplicatingId === form.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+
+              <div className="flex gap-1">
+                {form.is_published && (
+                  <Link
+                    href={`/f/${form.slug}`}
+                    target="_blank"
+                    className="rounded p-1.5 hover:bg-white/10 text-primary hover:text-primary/80 transition-colors"
+                    title="View Public Form"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDelete(form.id)
+                  }}
+                  className="rounded p-1.5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
       {dialog}
     </div>
   )

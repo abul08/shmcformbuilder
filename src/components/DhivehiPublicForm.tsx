@@ -318,7 +318,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                         value={(answers[field.id] as string) || ''}
                                         placeholder={placeholder || '123'}
                                         onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-left font-sans"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-right font-inter"
                                         dir="ltr"
                                     />
                                 )}

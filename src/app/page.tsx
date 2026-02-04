@@ -33,17 +33,25 @@ export default async function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {forms?.map((form) => (
-                <Link key={form.id} href={`/f/${form.slug}`} className="block group">
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
-                    <h3 className="text-xl  text-gray-700 mb-2 group-hover:text-primary transition-colors font-waheedh" dir="auto">{form.title}</h3>
-                    <p className="text-gray-400 text-sm mb-4 line-clamp-2 flex-grow font-faruma" dir="auto">{form.description || 'No description provided.'}</p>
-                    <div className="flex items-center text-primary text-sm font-medium mt-auto">
-                      Fill Form <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              {forms?.map((form) => {
+                const isDhivehiTitle = /[\u0780-\u07BF]/.test(form.title || '');
+                const titleClass = isDhivehiTitle ? 'font-waheed text-right' : 'font-inter text-left';
+
+                const isDhivehiDesc = /[\u0780-\u07BF]/.test(form.description || '');
+                const descClass = isDhivehiDesc ? 'font-faruma text-right leading-relaxed' : 'font-inter text-left';
+
+                return (
+                  <Link key={form.id} href={`/f/${form.slug}`} className="block group">
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
+                      <h3 className={`text-xl text-gray-200 mb-2 group-hover:text-primary transition-colors ${titleClass}`} dir="auto">{form.title}</h3>
+                      <p className={`text-gray-500 text-sm mb-4 line-clamp-2 flex-grow ${descClass}`} dir="auto">{form.description || 'No description provided.'}</p>
+                      <div className="flex items-center text-primary text-sm font-medium mt-auto">
+                        Fill Form <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                )
+              })}
               {(!forms || forms.length === 0) && (
                 <div className="col-span-full text-center py-12 text-gray-500 bg-white/5 rounded-xl border border-dashed border-white/10">
                   <p className=' font-waheed' dir="rtl">މިވަގުތު އެއްވެސް ފޯރމް ޢާންމުކުރެވިފައެއް ނުވެއެވެ.</p>
