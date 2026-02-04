@@ -3,8 +3,9 @@ import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
+import DebugEnv from "@/components/DebugEnv";
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   variable: '--font-sans',
   display: 'swap',
@@ -34,7 +35,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} ${waheedFont.variable} ${farumaFont.variable}`}>
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <DebugEnv />
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

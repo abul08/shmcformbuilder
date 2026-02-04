@@ -212,7 +212,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
     }
 
     return (
-        <form onSubmit={handleSubmit} className={`space-y-12 pb-20 animate-in slide-in-from-bottom-4 duration-700 ${className || ''}`} dir="ltr" noValidate>
+        <form onSubmit={handleSubmit} className={`space-y-12 pb-20 animate-in slide-in-from-bottom-4 duration-700 font-sans ${className || ''}`} dir="ltr" noValidate>
             {/* Form Header */}
             <div className="border-b border-white/10 pb-12">
                 <div>
