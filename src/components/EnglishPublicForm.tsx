@@ -204,9 +204,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                         </div>
                     </div>
                 </div>
-                <p className="text-center mt-8 text-xs text-gray-500 font-medium uppercase tracking-wider">
-                    Powered by <span className="text-primary font-semibold">FormBuilder</span>
-                </p>
+
             </div>
         )
     }
