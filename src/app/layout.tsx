@@ -34,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${waheedFont.variable} ${farumaFont.variable} font-sans`}>
+      <body className={`${inter.variable} ${inter.className} ${waheedFont.variable} ${farumaFont.variable} font-sans antialiased`}>
         <ToastProvider>
           {children}
         </ToastProvider>
