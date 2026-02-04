@@ -110,7 +110,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
         <div
             ref={setNodeRef}
             style={style}
-            className="mb-8 group touch-none"
+            className="mb-8 group"
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
         >
@@ -118,7 +118,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                 {/* Drag Handle & Type Badge */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/10" dir="rtl">
                     <div className="flex items-center gap-3">
-                        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-white transition-colors">
+                        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-white transition-colors touch-none">
                             <GripVertical className="h-5 w-5" />
                         </div>
                         <span className="text-xs text-gray-400 uppercase tracking-wider font-faruma">
