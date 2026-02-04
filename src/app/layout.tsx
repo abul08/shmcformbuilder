@@ -4,7 +4,11 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: '--font-sans',
+  display: 'swap',
+});
 const waheedFont = localFont({
   src: './fonts/MVAWaheed.ttf',
   variable: '--font-waheed',

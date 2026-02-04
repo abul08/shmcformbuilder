@@ -10,11 +10,12 @@ interface Toast {
   id: string
   message: string
   type: ToastType
+  className?: string
 }
 
 interface ToastContextValue {
   toasts: Toast[]
-  addToast: (message: string, type: ToastType) => void
+  addToast: (message: string, type: ToastType, className?: string) => void
   removeToast: (id: string) => void
 }
 
@@ -23,9 +24,9 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined)
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const addToast = (message: string, type: ToastType = 'info') => {
+  const addToast = (message: string, type: ToastType = 'info', className?: string) => {
     const id = Math.random().toString(36).substring(7)
-    setToasts((prev) => [...prev, { id, message, type }])
+    setToasts((prev) => [...prev, { id, message, type, className }])
 
     // Auto-remove after 5 seconds
     setTimeout(() => {
@@ -99,7 +100,7 @@ function ToastNotification({ toast, onClose }: { toast: Toast; onClose: () => vo
         <Icon className={`h-5 w-5 ${iconClass}`} />
       </div>
       <div className="flex-1">
-        <p className={`text-sm font-medium ${text} font-faruma`} dir="auto">{toast.message}</p>
+        <p className={`text-sm font-medium ${text} ${toast.className || 'font-faruma'}`} dir="auto">{toast.message}</p>
       </div>
       <button
         onClick={onClose}

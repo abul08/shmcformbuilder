@@ -36,7 +36,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
         const validation = validateFile(file)
         if (!validation.valid) {
-            addToast(validation.error || 'Invalid file', 'error')
+            addToast(validation.error || 'Invalid file', 'error', 'font-waheed')
             return
         }
 
@@ -64,17 +64,17 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
             if (field.required) {
                 if (field.type === 'file') {
                     if (!file) {
-                        addToast(`${label} - ފައިލް އަޕްލޯޑްކުރައްވާ`, 'error') // Please upload file
+                        addToast(`${label} - ފައިލް އަޕްލޯޑްކުރައްވާ`, 'error', 'font-waheed') // Please upload file
                         hasError = true
                     }
                 } else if (field.type === 'consent') {
                     if (!answer) {
-                        addToast(`${label} - ޤަބޫލުކުރައްވާ`, 'error') // Please accept
+                        addToast(`${label} - ޤަބޫލުކުރައްވާ`, 'error', 'font-waheed') // Please accept
                         hasError = true
                     }
                 } else {
                     if (!answer || (typeof answer === 'string' && !answer.trim())) {
-                        addToast(`${label} - ހުސްކޮށް ނުބެހެއްޓޭނެ`, 'error') // Cannot be empty
+                        addToast(`${label} - ހުސްކޮށް ނުބެހެއްޓޭނެ`, 'error', 'font-waheed') // Cannot be empty
                         hasError = true
                     }
                 }
@@ -83,7 +83,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
             // Check Email Format
             if (answer && field.type === 'email' && typeof answer === 'string') {
                 if (!emailRegex.test(answer)) {
-                    addToast(`${label} - އީމެއިލް ރަނގަޅެއް ނޫން`, 'error') // Invalid Email
+                    addToast(`${label} - އީމެއިލް ރަނގަޅެއް ނޫން`, 'error', 'font-waheed') // Invalid Email
                     hasError = true
                 }
             }
@@ -141,16 +141,16 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
             if (result.error) {
                 setError(result.error)
-                addToast(result.error, 'error')
+                addToast(result.error, 'error', 'font-waheed')
             } else {
                 setIsSubmitted(true)
                 setUploadedFiles({})
-                addToast('ފޯމު ކާމިޔާބުކަމާއެކު ހުށަހެޅިއްޖެ!', 'success')
+                addToast('ފޯމު ކާމިޔާބުކަމާއެކު ހުށަހެޅިއްޖެ!', 'success', 'font-waheed')
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to submit response'
             setError(message)
-            addToast(message, 'error')
+            addToast(message, 'error', 'font-waheed')
         } finally {
             setIsSubmitting(false)
             setUploadingFiles({})
@@ -591,7 +591,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                         if (confirmed) {
                             setAnswers({})
                             setUploadedFiles({})
-                            addToast('ފޯމު ސާފުކުރެވިއްޖެ', 'info')
+                            addToast('ފޯމު ސާފުކުރެވިއްޖެ', 'info', 'font-waheed')
                         }
                     }}
                     className="p-2 sm:p-0 text-gray-400 hover:text-white transition-colors shrink-0"
