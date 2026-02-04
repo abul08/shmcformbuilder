@@ -190,6 +190,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                             </div>
                         </div>
 
+
                         {/* Image Specific Controls */}
                         {field.type === 'image' && (
                             <div className="col-span-full space-y-4 rounded-lg bg-black/20 p-4 border border-white/5">
@@ -411,6 +412,7 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
     const { confirm, dialog } = useConfirmDialog()
     const { addToast } = useToast()
     const bottomRef = useRef<HTMLDivElement>(null)
+
 
     // Sync local state with server data when props change
     useEffect(() => {
@@ -841,8 +843,8 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
                     </DialogHeader>
                     <div className="mt-4">
                         <FormToolbox
-                            onAddField={(type) => {
-                                handleAddField(type)
+                            onAddField={async (type) => {
+                                await handleAddField(type)
                                 setIsToolboxOpen(false)
                             }}
                             className="bg-transparent ring-0 p-0 shadow-none static"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Form, FormField, FormFieldType, Json } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -461,7 +461,9 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
     const [lastSaved, setLastSaved] = useState<Date | null>(null)
     const router = useRouter()
     const { confirm, dialog } = useConfirmDialog()
+
     const { addToast } = useToast()
+    const bottomRef = useRef<HTMLDivElement>(null)
 
     // Sync local state with server data when props change
     useEffect(() => {
@@ -520,6 +522,9 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
 
                 setFields([...fields, newFieldRaw])
                 setLastSaved(new Date())
+                setTimeout(() => {
+                    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+                }, 100)
             }
         } catch (error) {
             addToast('Failed to add field', 'error')
@@ -785,6 +790,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                                         </div>
                                     </SortableContext>
                                 </DndContext>
+                                <div ref={bottomRef} />
                             </div>
                         </form>
                     </div>
@@ -902,8 +908,8 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                     </DialogHeader>
                     <div className="mt-4">
                         <FormToolbox
-                            onAddField={(type) => {
-                                handleAddField(type)
+                            onAddField={async (type) => {
+                                await handleAddField(type)
                                 setIsToolboxOpen(false)
                             }}
                             variant="dhivehi"
