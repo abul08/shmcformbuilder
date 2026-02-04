@@ -3,13 +3,13 @@ import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
-import DebugEnv from "@/components/DebugEnv";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: '--font-sans',
   display: 'swap',
 });
+
 const waheedFont = localFont({
   src: './fonts/MVAWaheed.ttf',
   variable: '--font-waheed',
@@ -34,9 +34,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} ${waheedFont.variable} ${farumaFont.variable}`}>
+      <body className={`${inter.variable} ${waheedFont.variable} ${farumaFont.variable} font-sans`}>
         <ToastProvider>
-          <DebugEnv />
           {children}
         </ToastProvider>
       </body>
