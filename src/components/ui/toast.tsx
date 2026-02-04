@@ -99,7 +99,7 @@ function ToastNotification({ toast, onClose }: { toast: Toast; onClose: () => vo
       <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${bg}`}>
         <Icon className={`h-5 w-5 ${iconClass}`} />
       </div>
-      <div className="flex-1">
+      <div className="flex-1 pt-2">
         <p className={`text-sm font-medium ${text} ${toast.className || 'font-sans'}`} dir="auto">{toast.message}</p>
       </div>
       <button

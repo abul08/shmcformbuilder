@@ -177,7 +177,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
     if (isSubmitted) {
         return (
-            <div className="animate-in fade-in zoom-in duration-500">
+            <div className="animate-in fade-in zoom-in duration-500 pr-2 pl-2">
                 <div className="rounded-lg bg-white/5 ring-1 ring-white/10 shadow-2xl text-center py-16 px-6" dir="rtl">
                     <div className="space-y-6">
                         <div className="flex justify-center">
@@ -186,8 +186,8 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                             </div>
                         </div>
                         <div className="space-y-2 font-waheed">
-                            <h2 className="text-3xl text-white">{displayTitle}</h2>
-                            <p className="text-gray-400 text-lg">
+                            <h2 className="text-2xl text-gray-300">{displayTitle}</h2>
+                            <p className="text-gray-600 text-lg">
                                 ފޯމު ކާމިޔާބުކަމާއެކު ހުށަހެޅިއްޖެ!
                             </p>
                         </div>
