@@ -100,7 +100,7 @@ export default function FormList({ initialForms }: { initialForms: Form[] }) {
         >
           <div className="p-5">
             <div className="flex justify-between items-start gap-2 mb-3">
-              <h3 className="text-base font-semibold text-white truncate group-hover:text-primary transition-colors">
+              <h3 className="text-base font-semibold text-white truncate group-hover:text-primary transition-colors font-faruma" dir="auto">
                 {form.title}
               </h3>
               <Badge variant={form.is_published ? 'success' : 'secondary'} className="shrink-0">
@@ -108,7 +108,7 @@ export default function FormList({ initialForms }: { initialForms: Form[] }) {
               </Badge>
             </div>
 
-            <p className="text-sm text-gray-400 line-clamp-2 min-h-[2.5rem] mb-4">
+            <p className="text-sm text-gray-400 line-clamp-2 min-h-[2.5rem] mb-4 font-faruma" dir="auto">
               {form.description || 'No description provided'}
             </p>
 
