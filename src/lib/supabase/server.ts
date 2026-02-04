@@ -4,9 +4,14 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
+  /* DEBUG LOGGING */
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  console.log('[ServerClient] Init. URL:', !!url, 'Key:', !!key, 'KeyLen:', key?.length, 'Last5:', key?.slice(-5));
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()!,
+    url!,
+    key!,
     {
       cookies: {
         getAll() {

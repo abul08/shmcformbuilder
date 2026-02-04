@@ -34,7 +34,7 @@ export async function uploadFile(
 
     if (error) {
       console.error('Upload error:', error)
-      return { error: error.message }
+      return { error: `Upload Failed: ${error.message} (Code: ${error.statusCode})` }
     }
 
     // Get public URL

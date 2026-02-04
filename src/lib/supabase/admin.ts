@@ -5,9 +5,14 @@ export async function createAdminClient() {
         console.error('[createAdminClient] FATAL: SUPABASE_SERVICE_ROLE_KEY is not defined in environment variables!')
     }
 
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+    console.log('[AdminClient] Init. URL:', !!url, 'ServiceKey:', !!serviceKey, 'KeyLen:', serviceKey?.length);
+
     return createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        url!,
+        serviceKey!,
         {
             auth: {
                 autoRefreshToken: false,

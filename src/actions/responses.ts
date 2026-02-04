@@ -19,7 +19,7 @@ export async function submitResponse(formId: string, answers: Record<string, any
 
   if (formCheckError || !formCheck) {
     console.error('[SubmitResponse] Form check failed:', formCheckError)
-    return { error: 'Form not found or access denied (Check if published)' }
+    return { error: `Form Check Failed: ${formCheckError?.message || 'Form not found or unpublished'}` }
   }
 
   console.log('[SubmitResponse] Form found:', formCheck)
