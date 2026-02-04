@@ -36,7 +36,7 @@ export default async function Home() {
               {forms?.map((form) => (
                 <Link key={form.id} href={`/f/${form.slug}`} className="block group">
                   <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
-                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors font-faruma" dir="auto">{form.title}</h3>
+                    <h3 className="text-xl  text-gray-700 mb-2 group-hover:text-primary transition-colors font-waheedh" dir="auto">{form.title}</h3>
                     <p className="text-gray-400 text-sm mb-4 line-clamp-2 flex-grow font-faruma" dir="auto">{form.description || 'No description provided.'}</p>
                     <div className="flex items-center text-primary text-sm font-medium mt-auto">
                       Fill Form <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />

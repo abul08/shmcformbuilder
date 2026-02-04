@@ -18,7 +18,9 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["var(--font-sans)", "var(--font-faruma)", "sans-serif"],
+        inter: ["var(--font-sans)", "var(--font-faruma)", "sans-serif"], // Alias for compatibility
         waheed: ['var(--font-waheed)', "var(--font-faruma)", 'sans-serif'],
+        waheedh: ['var(--font-waheed)', "var(--font-faruma)", 'sans-serif'], // Alias for typo/preference
         faruma: ['var(--font-faruma)', 'sans-serif'],
       },
       colors: {
