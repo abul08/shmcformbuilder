@@ -588,7 +588,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
     const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/f/${form.slug}` : ''
 
     return (
-        <div className="min-h-screen bg-gray-900 pb-20">
+        <div className="min-h-screen bg-gray-900 pb-20 pr-2 pl-2">
             {/* Sticky Header */}
             <div className="sticky top-0 z-30 border-b border-white/10 bg-gray-900/80 backdrop-blur-md">
                 <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">

@@ -20,14 +20,14 @@ export default async function Home() {
 
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-900 flex flex-col pr-2 pl-2">
       <main className="flex-grow bg-gray-900">
         <section className="py-10 px-4">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 border-b border-white/10 pb-6 gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-white">Available Forms</h1>
-                <p className="text-gray-400 mt-2">Public forms open for submissions</p>
+                <h1 className="sm:text-3xl text-2xl font-bold text-gray-300">Available Forms</h1>
+                <p className="text-gray-600 mt-2">Public forms open for submissions</p>
               </div>
 
             </div>
@@ -55,7 +55,7 @@ export default async function Home() {
               {(!forms || forms.length === 0) && (
                 <div className="col-span-full text-center py-12 text-gray-500 bg-white/5 rounded-xl border border-dashed border-white/10">
                   <p className=' font-waheed' dir="rtl">މިވަގުތު އެއްވެސް ފޯރމް ޢާންމުކުރެވިފައެއް ނުވެއެވެ.</p>
-                  <p>No public forms available at the moment.</p>
+                  <p className='text-sm'>No public forms available at the moment.</p>
                 </div>
               )}
             </div>

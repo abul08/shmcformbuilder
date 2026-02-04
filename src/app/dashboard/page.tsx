@@ -42,16 +42,14 @@ export default async function DashboardPage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-900 flex flex-col pr-2 pl-2">
       {/* Header */}
       <nav className="border-b border-white/10 bg-gray-900/95 backdrop-blur-sm sticky top-0 z-10 shadow-lg">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between items-center">
             <div className="flex items-center gap-2.5">
-              <div className="bg-primary p-1.5 rounded-lg shadow-sm">
-                <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-bold tracking-wide text-white">SHMC FormBuilder</span>
+
+              <span className="text-lg font-medium tracking-normal text-gray-600">SHMC FormBuilder</span>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
@@ -89,8 +87,8 @@ export default async function DashboardPage() {
           {/* Hero/Stats Section */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Your Forms</h1>
-              <p className="text-gray-400 mt-1">Create, manage and share your forms.</p>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-300">Your Forms</h1>
+              <p className="text-gray-600 mt-1">Create, manage and share your forms.</p>
             </div>
             <div className="w-full sm:w-auto">
               <CreateFormButton />

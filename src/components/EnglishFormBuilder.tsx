@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Form, FormField, FormFieldType, Json } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -410,6 +410,7 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
     const router = useRouter()
     const { confirm, dialog } = useConfirmDialog()
     const { addToast } = useToast()
+    const bottomRef = useRef<HTMLDivElement>(null)
 
     // Sync local state with server data when props change
     useEffect(() => {
@@ -455,6 +456,9 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
             if (result.data) {
                 setFields([...fields, result.data as FormField])
                 setLastSaved(new Date())
+                setTimeout(() => {
+                    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+                }, 100)
             }
         } catch (error) {
             addToast('Failed to add field', 'error')
@@ -523,7 +527,7 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
     const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/f/${form.slug}` : ''
 
     return (
-        <div className="min-h-screen bg-gray-900 pb-20">
+        <div className="min-h-screen bg-gray-900 pb-20 pr-2 pl-2">
             {/* Sticky Header */}
             <div className="sticky top-0 z-30 border-b border-white/10 bg-gray-900/80 backdrop-blur-md">
                 <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">

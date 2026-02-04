@@ -19,6 +19,9 @@ export default function LoginPage() {
     setMessage(null)
     setLoading(true)
 
+    // Add a small delay to ensure the user sees the loading state
+    await new Promise(resolve => setTimeout(resolve, 800))
+
     const result = await login(formData)
 
     if (result?.error) {
@@ -29,13 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 sm:p-6">
-      <Link href="/" className="flex items-center gap-2.5 mb-10 group hover:scale-105 transition-transform">
-        <div className="bg-primary p-1.5 rounded-lg shadow-lg shadow-primary/20">
-          <LayoutDashboard className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <span className="text-2xl font-black tracking-tight text-white">SHMC FormBuilder</span>
-      </Link>
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-8 sm:p-6">
 
       <div className="w-full max-w-md rounded-lg bg-white/5 ring-1 ring-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-500">
         <div className="border-b border-white/10 px-8 py-6">
@@ -48,7 +45,11 @@ export default function LoginPage() {
         </div>
 
         <div className="p-8">
-          <form action={handleSubmit} className="space-y-6">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            handleSubmit(formData);
+          }} className="space-y-6">
             <div>
               <label htmlFor="username" className="block text-sm/6 font-medium text-white">
                 Username
@@ -106,8 +107,8 @@ export default function LoginPage() {
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Please wait...
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  Signing in...
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">

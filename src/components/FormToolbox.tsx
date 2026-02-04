@@ -14,17 +14,30 @@ import {
     Plus,
     Image as ImageIcon,
     Pilcrow,
-    Clock
+    Clock,
+    Loader2
 } from 'lucide-react'
+import { useState } from 'react'
 
 interface FormToolboxProps {
-    onAddField: (type: FormFieldType) => void
+    onAddField: (type: FormFieldType) => Promise<void>
     variant?: 'default' | 'dhivehi'
     className?: string
     isModal?: boolean
 }
 
 export default function FormToolbox({ onAddField, variant = 'default', className, isModal = false }: FormToolboxProps) {
+    const [addingType, setAddingType] = useState<string | null>(null);
+
+    const handleFieldClick = async (type: string) => {
+        if (addingType) return;
+        setAddingType(type);
+        try {
+            await onAddField(type as FormFieldType);
+        } finally {
+            setAddingType(null);
+        }
+    };
     const textFields = [
         { type: 'short_text', label: variant === 'dhivehi' ? 'Short Text (Dhivehi)' : 'Short Text', icon: Type, description: 'Single line input' },
     ]
@@ -86,11 +99,16 @@ export default function FormToolbox({ onAddField, variant = 'default', className
                             {group.items.map((item) => (
                                 <button
                                     key={item.type}
-                                    onClick={() => onAddField(item.type as FormFieldType)}
-                                    className="group flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-white/10 transition-colors border border-transparent hover:border-white/5"
+                                    onClick={() => handleFieldClick(item.type)}
+                                    disabled={addingType !== null}
+                                    className={`group flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-white/10 transition-all border border-transparent hover:border-white/5 ${addingType === item.type ? 'bg-white/10 border-primary/20' : ''} ${addingType !== null && addingType !== item.type ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    <div className="p-2.5 rounded-md bg-white/5 text-gray-400 group-hover:text-white group-hover:bg-primary/20 transition-colors">
-                                        <item.icon className="h-5 w-5" />
+                                    <div className={`p-2.5 rounded-md bg-white/5 text-gray-400 group-hover:text-white group-hover:bg-primary/20 transition-colors ${addingType === item.type ? 'text-primary' : ''}`}>
+                                        {addingType === item.type ? (
+                                            <Loader2 className="h-5 w-5 animate-spin" />
+                                        ) : (
+                                            <item.icon className="h-5 w-5" />
+                                        )}
                                     </div>
                                     <div>
                                         <div className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">
