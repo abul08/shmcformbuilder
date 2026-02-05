@@ -216,7 +216,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
             {/* Form Header */}
             <div className="border-b border-white/10 pb-12 text-right">
                 <div>
-                    <h2 className="text-2xl text-gray-400 font-waheed">
+                    <h2 className="text-2xl sm:text-3xl text-gray-400 font-waheed">
                         {displayTitle}
                     </h2>
                     {displayDesc && (
