@@ -273,11 +273,11 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                                 {field.required && <span className="text-primary mr-1">*</span>}
                                             </h3>
                                             {content && (
-                                                <p className="text-lg text-gray-200 whitespace-pre-wrap font-faruma text-justify leading-relaxed">{content}</p>
+                                                <p className="text-lg text-gray-400 whitespace-pre-wrap font-faruma text-justify leading-relaxed pr-4">{content}</p>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <label htmlFor={field.id} className="text-xl text-white font-waheed">
+                                        <div className="flex items-center gap-3 pr-4">
+                                            <label htmlFor={field.id} className="text-xl text-gray-400 font-waheed">
                                                 ޤަބޫލް
                                             </label>
                                             <div className="flex h-6 items-center">
@@ -343,7 +343,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                         value={(answers[field.id] as string) || ''}
                                         placeholder={placeholder || 'email@example.com'}
                                         onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-left font-sans"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-right font-sans"
                                         dir="ltr"
                                     />
                                 )}
@@ -378,7 +378,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                                     const val = e.target.value
                                                     setAnswers(prev => ({ ...prev, [field.id]: val }))
                                                 }}
-                                                className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-right font-faruma"
+                                                className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-base text-gray-400 outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-right font-faruma"
                                                 dir="rtl"
                                             >
                                                 <option value="">ހިޔާރުކުރައްވާ</option>
@@ -390,7 +390,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                             </select>
                                         ) : (
                                             choiceOptions.map((option, i) => (
-                                                <div key={i} className="relative flex gap-x-3" dir="rtl">
+                                                <div key={i} className="relative flex gap-x-3 pr-4" dir="rtl">
                                                     <div className="flex h-6 items-center">
                                                         <input
                                                             id={`${field.id}-${i}`}
@@ -400,7 +400,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                                             checked={
                                                                 field.type === 'radio'
                                                                     ? answers[field.id] === option
-                                                                    : (answers[field.id] as string[])?.includes(option)
+                                                                    : (answers[field.id] as string[])?.includes(option) ?? false
                                                             }
                                                             onChange={(e) => {
                                                                 if (field.type === 'radio') {
@@ -414,11 +414,11 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                                                     }
                                                                 }
                                                             }}
-                                                            className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                                                            className="h-4 w-4 border-gray-400 text-primary focus:ring-primary"
                                                         />
                                                     </div>
                                                     <div className="text-sm/6">
-                                                        <label htmlFor={`${field.id}-${i}`} className="text-gray-900 font-faruma">
+                                                        <label htmlFor={`${field.id}-${i}`} className="text-gray-400 font-faruma">
                                                             {option}
                                                         </label>
                                                     </div>
