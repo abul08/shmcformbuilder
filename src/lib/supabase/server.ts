@@ -12,6 +12,9 @@ export async function createClient() {
     url!,
     key!,
     {
+      cookieOptions: {
+        maxAge: 60 * 60 * 24,
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll()

@@ -8,5 +8,9 @@ export function createClient() {
     console.error('[Supabase] Missing Env Vars:', { url: !!url, key: !!key })
   }
 
-  return createBrowserClient(url, key)
+  return createBrowserClient(url, key, {
+    cookieOptions: {
+      maxAge: 60 * 60 * 24,
+    },
+  })
 }
