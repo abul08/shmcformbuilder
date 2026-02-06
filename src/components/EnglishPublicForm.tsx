@@ -175,7 +175,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
     if (isSubmitted) {
         return (
-            <div className="animate-in fade-in zoom-in duration-500">
+            <div className="animate-in fade-in zoom-in duration-500 pr-4 pl-4">
                 <div className="rounded-lg bg-white/5 ring-1 ring-white/10 shadow-2xl text-center py-16 px-6">
                     <div className="space-y-6">
                         <div className="flex justify-center">
@@ -184,8 +184,8 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <h2 className="text-3xl text-white font-bold">{displayTitle}</h2>
-                            <p className="text-gray-400 text-lg">
+                            <h2 className="text-2xl text-gray-400 font-bold">{displayTitle}</h2>
+                            <p className="text-gray-600 text-sm">
                                 Your response has been successfully recorded.
                             </p>
                         </div>
@@ -196,7 +196,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                     setUploadedFiles({})
                                     setIsSubmitted(false)
                                 }}
-                                className="rounded-md bg-white/10 px-6 py-2.5 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+                                className="rounded-md bg-white/10 px-6 py-2.5 text-sm font-normal text-gray-300 hover:bg-white/20 transition-colors"
                             >
                                 <Undo2 className="h-4 w-4 inline -mt-0.5 mr-2" />
                                 Submit another response
@@ -210,11 +210,11 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
     }
 
     return (
-        <form onSubmit={handleSubmit} className={`space-y-12 pb-20 animate-in slide-in-from-bottom-4 duration-700 font-sans ${className || ''}`} dir="ltr" noValidate>
+        <form onSubmit={handleSubmit} className={`space-y-12 pb-20 animate-in slide-in-from-bottom-4 duration-700 pr-4 font-sans ${className || ''}`} dir="ltr" noValidate>
             {/* Form Header */}
-            <div className="border-b border-white/10 pb-12">
+            <div className="border-b border-white/10 pb-12 pr-2 pl-2">
                 <div>
-                    <h2 className="text-base/7 font-semibold text-white">
+                    <h2 className="text-2xl sm:text-3xl font-semibold text-gray-400">
                         {displayTitle}
                     </h2>
                     {displayDesc && (
@@ -225,12 +225,12 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                 </div>
 
                 <p className="mt-6 text-xs text-gray-500 font-medium">
-                    <span className="text-primary">*</span> Indicates required field
+                    <span className="text-red-500">*</span> Indicates required field
                 </p>
             </div>
 
             {/* Field Cards */}
-            <div className="space-y-6">
+            <div className="space-y-6 pr-2 pl-2">
                 {fields.map((field) => {
                     // Normalize options for choice fields (handling legacy array vs new object format)
                     const choiceOptions: string[] = Array.isArray(field.options)
@@ -246,7 +246,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         {field.required && <span className="text-primary mr-1">*</span>}
                                     </label>
                                 ) : (
-                                    <label htmlFor={field.id} className="block text-sm/6 font-medium text-white">
+                                    <label htmlFor={field.id} className="block text-sm/6 font-medium text-gray-300">
                                         {field.label}
                                         {field.required && <span className="text-red-500 ml-1">*</span>}
                                     </label>
@@ -289,7 +289,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         onChange={(e) => {
                                             setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))
                                         }}
-                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-gray-300 outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
                                     />
                                 )}
 
@@ -303,7 +303,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         onChange={(e) => {
                                             setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))
                                         }}
-                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-gray-300 outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
                                     />
                                 )}
 
@@ -317,7 +317,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         onChange={(e) => {
                                             setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))
                                         }}
-                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-gray-300 outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
                                     />
                                 )}
 
@@ -331,7 +331,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         onChange={(e) => {
                                             setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))
                                         }}
-                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-gray-300 outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
                                     />
                                 )}
 
@@ -348,7 +348,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                             val = latinToThaana(val)
                                             setAnswers(prev => ({ ...prev, [field.id]: val }))
                                         }}
-                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-right font-faruma"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-gray-300 outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-right font-faruma"
                                     />
                                 )}
 
@@ -362,7 +362,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         onChange={(e) => {
                                             setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))
                                         }}
-                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-gray-300 outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
                                     ></textarea>
                                 )}
 
@@ -378,7 +378,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                     const val = e.target.value
                                                     setAnswers(prev => ({ ...prev, [field.id]: val }))
                                                 }}
-                                                className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                                                className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-base text-gray-300 outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
                                             >
                                                 <option value="">Select an option</option>
                                                 {choiceOptions.map((option, i) => (
@@ -417,7 +417,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                         />
                                                     </div>
                                                     <div className="text-sm/6">
-                                                        <label htmlFor={`${field.id}-${i}`} className="font-medium text-white">
+                                                        <label htmlFor={`${field.id}-${i}`} className="font-medium text-gray-300">
                                                             {option}
                                                         </label>
                                                     </div>
@@ -433,7 +433,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         required={field.required}
                                         value={(answers[field.id] as string) || ''}
                                         onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-white shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 [color-scheme:dark]"
+                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-gray-300 shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 [color-scheme:dark]"
                                     />
                                 )}
 
@@ -443,7 +443,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         required={field.required}
                                         value={(answers[field.id] as string) || ''}
                                         onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-white shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 [color-scheme:dark]"
+                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-gray-300 shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 [color-scheme:dark]"
                                     />
                                 )}
 
@@ -558,7 +558,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
             }
 
 
-            <div className="flex items-center gap-4 pt-6">
+            <div className="flex items-center gap-4 pt-6 pr-2 pl-2">
                 <button
                     type="button"
                     onClick={async () => {
@@ -575,7 +575,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                             addToast('Form cleared', 'info')
                         }
                     }}
-                    className="p-2 sm:p-0 text-gray-400 hover:text-white transition-colors shrink-0"
+                    className="p-2 sm:p-0 text-gray-400 hover:text-gray-300 transition-colors shrink-0"
                     title="Clear form"
                 >
                     <span className="hidden sm:inline text-sm font-semibold">Clear form</span>
@@ -584,7 +584,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 sm:flex-none rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center"
+                    className="flex-1 sm:flex-none rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-gray-300 shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center"
                 >
                     {isSubmitting ? (
                         <span className="flex items-center gap-2">
