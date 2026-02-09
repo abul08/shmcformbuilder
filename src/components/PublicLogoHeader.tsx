@@ -9,7 +9,7 @@ export default function PublicLogoHeader() {
                 alt="SHMC Logo"
                 width={200}
                 height={200}
-                className="h-20 sm:h-24 w-auto object-contain opacity-50 mt-6"
+                className="h-20 sm:h-24 w-auto object-contain opacity-50 sm:mt-6 mt-4"
             />
         </div>
     )
