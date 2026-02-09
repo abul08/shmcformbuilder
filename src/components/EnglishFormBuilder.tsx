@@ -665,6 +665,52 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
 
                                     <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
                                         <div className="col-span-full">
+                                            <label htmlFor="form-type" className="block text-sm/6 font-medium text-white">
+                                                Form Type
+                                            </label>
+                                            <div className="mt-2">
+                                                <input
+                                                    id="form-type"
+                                                    type="text"
+                                                    value={(form.settings as any)?.form_type || ''}
+                                                    onChange={(e) => {
+                                                        handleUpdateForm({
+                                                            settings: {
+                                                                ...(form.settings as any || {}),
+                                                                form_type: e.target.value
+                                                            }
+                                                        })
+                                                    }}
+                                                    placeholder="Form Type (e.g. Survey, Application)"
+                                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="col-span-full">
+                                            <label htmlFor="form-number" className="block text-sm/6 font-medium text-white">
+                                                Form Number
+                                            </label>
+                                            <div className="mt-2">
+                                                <input
+                                                    id="form-number"
+                                                    type="text"
+                                                    value={(form.settings as any)?.form_number || ''}
+                                                    onChange={(e) => {
+                                                        handleUpdateForm({
+                                                            settings: {
+                                                                ...(form.settings as any || {}),
+                                                                form_number: e.target.value
+                                                            }
+                                                        })
+                                                    }}
+                                                    placeholder="e.g. 44555"
+                                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="col-span-full">
                                             <label htmlFor="form-title" className="block text-sm/6 font-medium text-white">
                                                 Form Title
                                             </label>

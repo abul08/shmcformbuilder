@@ -51,13 +51,20 @@ export default async function ResponsesPage({ params }: { params: { id: string }
                 <span className="text-xs text-gray-400 hidden sm:block">Responses</span>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Link
                 href={`/forms/${form.id}/edit`}
                 className="hidden sm:flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
               >
                 Back to Editor
+              </Link>
+              <Link
+                href="/dashboard"
+                className="hidden sm:flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
               </Link>
             </div>
           </div>
@@ -79,10 +86,10 @@ export default async function ResponsesPage({ params }: { params: { id: string }
           </div>
 
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <ResponsesTable 
-              form={form} 
-              fields={form.form_fields || []} 
-              responses={responses || []} 
+            <ResponsesTable
+              form={form}
+              fields={form.form_fields || []}
+              responses={responses || []}
             />
           </div>
         </div>

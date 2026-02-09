@@ -107,9 +107,22 @@ export default function FormList({ initialForms }: { initialForms: Form[] }) {
           >
             <div className="p-5">
               <div className="flex justify-between items-start gap-2 mb-3">
-                <h3 className={` text-gray-300 truncate group-hover:text-primary transition-colors ${titleClass}`} dir="auto">
-                  {form.title}
-                </h3>
+                <div className="flex-1 min-w-0">
+                  {(form.settings as any)?.form_type && (
+                    <div className={`text-xs font-medium text-primary mb-1 ${(form.settings as any)?.form_type && /[\u0780-\u07BF]/.test((form.settings as any).form_type) ? 'font-faruma text-right' : 'font-inter text-left'}`}>
+                      {(form.settings as any).form_type}
+                    </div>
+                  )}
+                  {(form.settings as any)?.form_number && (
+                    <div className={`text-[10px] text-gray-500 mb-1 ${(form.settings as any)?.form_type && /[\u0780-\u07BF]/.test((form.settings as any).form_type) ? 'font-faruma text-right' : 'font-inter text-left'}`}>
+                      {/[\u0780-\u07BF]/.test((form.settings as any).form_type || '') ? 'ނަންބަރު: ' : 'Number: '}
+                      {(form.settings as any).form_number}
+                    </div>
+                  )}
+                  <h3 className={`text-gray-300 truncate group-hover:text-primary transition-colors ${titleClass}`} dir="auto">
+                    {form.title}
+                  </h3>
+                </div>
                 <Badge variant={form.is_published ? 'success' : 'secondary'} className="shrink-0">
                   {form.is_published ? 'Live' : 'Draft'}
                 </Badge>

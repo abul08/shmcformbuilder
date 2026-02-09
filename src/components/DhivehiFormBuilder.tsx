@@ -719,15 +719,68 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                                     <div className="border-b border-white/10 pb-6 mb-6">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <h2 className="text-lg tracking-wide text-gray-500 font-waheed">ފޯމުގެ ތަފްސީލް</h2>
+                                                <h2 className="text-lg tracking-wide text-gray-500 font-waheed">ފޯމުގެ ތަފުސީލު</h2>
                                                 <p className="mt-1 text-sm/6 text-gray-400 font-faruma">
-                                                    ފޯމުގެ ނަމާއި ތަފްސީލް ލިޔުއްވާ
+                                                    ފޯމުގެ ތަފުސީލު ލިޔުއްވާ
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
+                                        <div className="col-span-full">
+                                            <label htmlFor="form-type" className="block text-lg tracking-wide text-gray-300 font-waheed">
+                                                ފޯމުގެ ބާވަތް
+                                            </label>
+                                            <div className="mt-2">
+                                                <input
+                                                    id="form-type"
+                                                    type="text"
+                                                    value={(form.settings as any)?.form_type || ''}
+                                                    onChange={(e) => {
+                                                        const newType = latinToThaana(e.target.value)
+                                                        handleUpdateForm({
+                                                            settings: {
+                                                                ...(form.settings as any || {}),
+                                                                form_type: newType
+                                                            }
+                                                        })
+                                                    }}
+                                                    placeholder="ފޯމުގެ ބާވަތް..."
+                                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 font-faruma"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="col-span-full">
+                                            <label htmlFor="form-number" className="block text-lg tracking-wide text-gray-300 font-waheed">
+                                                ފޯމު ނަންބަރު
+                                            </label>
+                                            <div className="mt-2">
+                                                <input
+                                                    id="form-number"
+                                                    type="text"
+                                                    value={(form.settings as any)?.form_number || ''}
+                                                    onChange={(e) => {
+                                                        // No transliteration for number, usually logic is kept as is or English numbers
+                                                        // But let's assume it can be text like "Ref-123", so no forced transliteration unless requested.
+                                                        // Actually user requested "Number: 44555", so it seems numeric/English.
+                                                        // Dhivehi form might also want English numbers or Dhivehi numbers.
+                                                        // The user said "use dhivehi text", but "44555" is English numerals.
+                                                        // I will not force transliteration for this field to allow numbers.
+                                                        handleUpdateForm({
+                                                            settings: {
+                                                                ...(form.settings as any || {}),
+                                                                form_number: e.target.value
+                                                            }
+                                                        })
+                                                    }}
+                                                    placeholder="ފޯމު ނަންބަރު..."
+                                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 font-inter text-right" dir="ltr"
+                                                />
+                                            </div>
+                                        </div>
+
                                         <div className="col-span-full">
                                             <label htmlFor="form-title" className="block text-lg tracking-wide text-gray-300 font-waheed">
                                                 ފޯމުގެ ނަން
@@ -746,7 +799,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
 
                                         <div className="col-span-full">
                                             <label htmlFor="form-description" className="block text-lg tracking-wide text-gray-300 font-waheed">
-                                                ތަފްސީލް
+                                                ތަފުސީލު
                                             </label>
                                             <div className="mt-2">
                                                 <textarea
@@ -775,7 +828,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                                         <div>
                                             {fields.length === 0 ? (
                                                 <div className="text-center py-20 border-2 border-dashed border-white/10 rounded-lg bg-white/5 font-faruma">
-                                                    <p className="text-gray-400">ސުވާލެއް އިތުރުކުރައްވާ!</p>
+                                                    <p className="text-gray-400" dir="rtl">ސުވާލެއް އިތުރުކުރައްވާ!</p>
                                                 </div>
                                             ) : (
                                                 fields.map((field) => (

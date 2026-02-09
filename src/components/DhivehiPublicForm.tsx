@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, getFileIcon, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
 import { uploadFile } from '@/actions/files'
 import { latinToThaana } from '@/lib/thaana'
+import PublicLogoHeader from '@/components/PublicLogoHeader'
 
 export default function DhivehiPublicForm({ form, fields, className }: { form: Form, fields: FormField[], className?: string }) {
     const displayTitle = form.title
@@ -213,10 +214,24 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
     return (
         <form onSubmit={handleSubmit} className={`space-y-12 pb-20 px-4 md:px-0 animate-in slide-in-from-bottom-4 duration-700 ${className || ''}`} dir="rtl" noValidate>
+
+            {/* Header with Logo */}
+            <PublicLogoHeader />
+
             {/* Form Header */}
             <div className="border-b border-white/10 pb-12 text-right">
                 <div>
-                    <h2 className="text-2xl sm:text-3xl text-gray-400 font-waheed">
+                    {(form.settings as any)?.form_type && (
+                        <p className="text-lg text-primary mb-2 font-waheed tracking-wider opacity-80">
+                            {(form.settings as any).form_type}
+                        </p>
+                    )}
+                    {(form.settings as any)?.form_number && (
+                        <p className="text-sm sm:text-lg text-gray-400 mb-6 font-waheed opacity-70 pr-1" dir="ltr">
+                            {(form.settings as any).form_number} <span className="font-waheed sm:text-2xl text-lg" dir="rtl">ނަންބަރު:</span>
+                        </p>
+                    )}
+                    <h2 className="text-2xl sm:text-3xl text-gray-400 font-waheed mt-2">
                         {displayTitle}
                     </h2>
                     {displayDesc && (
@@ -226,7 +241,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                     )}
                 </div>
 
-                <p className="mt-6 text-xs text-gray-500 font-faruma">
+                <p className="mt-6 text-md text-gray-600 font-faruma">
                     <span className="text-primary">*</span> މި ފާހަގަ ޖަހާފައިވާ ބައިތައް ފުރިހަމަ ކުރަންވާނެ
                 </p>
             </div>
@@ -253,12 +268,12 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                         <div key={field.id}>
                             {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && (
                                 field.type === 'english_text' ? (
-                                    <label htmlFor={field.id} className="block text-sm/6 font-medium text-gray-900 text-left font-sans" dir="ltr">
+                                    <label htmlFor={field.id} className="block sm:text-lg text-md font-medium tracking-normal text-gray-400 text-left font-sans" dir="ltr">
                                         {label}
                                         {field.required && <span className="text-primary ml-1">*</span>}
                                     </label>
                                 ) : (
-                                    <label htmlFor={field.id} className="block text-2xl text-gray-400 text-right font-waheed">
+                                    <label htmlFor={field.id} className="block sm:text-2xl text-xl text-gray-400 text-right font-waheed">
                                         {label}
                                         {field.required && <span className="text-primary mr-1">*</span>}
                                     </label>
@@ -597,7 +612,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                     className="p-2 sm:p-0 text-gray-400 hover:text-white transition-colors shrink-0"
                     title="Clear form"
                 >
-                    <span className="hidden sm:inline text-lg font-waheed">ފޯމު ސާފުކުރޭ</span>
+                    <span className="hidden sm:inline text-lg font-waheed text-gray-600">ފޯމު ސާފުކުރޭ</span>
                     <Trash2 className="h-5 w-5 sm:hidden" />
                 </button>
 

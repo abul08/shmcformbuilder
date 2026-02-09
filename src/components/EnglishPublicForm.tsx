@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, getFileIcon, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
 import { uploadFile } from '@/actions/files'
 import { latinToThaana } from '@/lib/thaana'
+import PublicLogoHeader from '@/components/PublicLogoHeader'
 
 
 export default function EnglishPublicForm({ form, fields, className }: { form: Form, fields: FormField[], className?: string }) {
@@ -211,9 +212,23 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
     return (
         <form onSubmit={handleSubmit} className={`space-y-12 pb-20 animate-in slide-in-from-bottom-4 duration-700 pr-4 font-sans ${className || ''}`} dir="ltr" noValidate>
+
+            {/* Header with Logo */}
+            <PublicLogoHeader />
+
             {/* Form Header */}
             <div className="border-b border-white/10 pb-12 pr-2 pl-2">
                 <div>
+                    {(form.settings as any)?.form_type && (
+                        <p className="text-md font-semibold text-primary tracking-normal mb-2">
+                            {(form.settings as any).form_type}
+                        </p>
+                    )}
+                    {(form.settings as any)?.form_number && (
+                        <p className="text-lg text-gray-500 tracking-normal mb-6">
+                            <span className="font-semibold">Number:</span> {(form.settings as any).form_number}
+                        </p>
+                    )}
                     <h2 className="text-2xl sm:text-3xl font-semibold text-gray-400">
                         {displayTitle}
                     </h2>
@@ -224,8 +239,8 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                     )}
                 </div>
 
-                <p className="mt-6 text-xs text-gray-500 font-medium">
-                    <span className="text-red-500">*</span> Indicates required field
+                <p className="mt-4 text-gray-700 font-medium pb-2">
+                    <span className="text-primary text-md pt-2">*</span> Indicates required field
                 </p>
             </div>
 
@@ -241,14 +256,14 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                         <div key={field.id}>
                             {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && (
                                 field.type === 'dhivehi_text' ? (
-                                    <label htmlFor={field.id} className="block text-xl font-waheed text-white text-right" dir="rtl">
+                                    <label htmlFor={field.id} className="block text-xl font-waheed text-gray-400 text-right" dir="rtl">
                                         {field.label}
                                         {field.required && <span className="text-primary mr-1">*</span>}
                                     </label>
                                 ) : (
-                                    <label htmlFor={field.id} className="block text-sm/6 font-medium text-gray-300">
+                                    <label htmlFor={field.id} className="block text-lg font-medium text-gray-400">
                                         {field.label}
-                                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                                        {field.required && <span className="text-primary ml-1">*</span>}
                                     </label>
                                 )
                             )}
@@ -258,7 +273,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         <div>
                                             <h3 className="block text-sm/6 font-medium text-white mb-2">
                                                 {field.label}
-                                                {field.required && <span className="text-red-500 ml-1">*</span>}
+                                                {field.required && <span className="text-primary ml-1">*</span>}
                                             </h3>
                                             {(field.options as any)?.content && (
                                                 <p className="text-sm/6 text-gray-400 whitespace-pre-wrap">{(field.options as any).content}</p>
@@ -578,13 +593,13 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                     className="p-2 sm:p-0 text-gray-400 hover:text-gray-300 transition-colors shrink-0"
                     title="Clear form"
                 >
-                    <span className="hidden sm:inline text-sm font-semibold">Clear form</span>
+                    <span className="hidden sm:inline text-md font-semibold text-gray-600">Clear form</span>
                     <Trash2 className="h-5 w-5 sm:hidden" />
                 </button>
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 sm:flex-none rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-gray-300 shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center"
+                    className="flex-1 sm:flex-none rounded-md bg-primary px-6 py-2.5 text-md font-semibold text-gray-300 shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center"
                 >
                     {isSubmitting ? (
                         <span className="flex items-center gap-2">
@@ -592,7 +607,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                             Submitting...
                         </span>
                     ) : (
-                        <span className="flex items-center gap-2">
+                        <span className="flex items-center gap-2 ">
                             <Send className="h-4 w-4" />
                             Submit Response
                         </span>
