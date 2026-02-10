@@ -448,7 +448,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         required={field.required}
                                         value={(answers[field.id] as string) || ''}
                                         onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-gray-300 shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 [color-scheme:dark]"
+                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-gray-300 shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6"
                                     />
                                 )}
 
@@ -458,7 +458,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         required={field.required}
                                         value={(answers[field.id] as string) || ''}
                                         onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-gray-300 shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 [color-scheme:dark]"
+                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-gray-300 shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6"
                                     />
                                 )}
 

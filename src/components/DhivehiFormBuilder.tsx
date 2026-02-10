@@ -470,6 +470,13 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
         setFields(initialFields)
     }, [initialFields])
 
+    const toLocalISOString = (dateString: string) => {
+        const date = new Date(dateString);
+        const offset = date.getTimezoneOffset();
+        const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
+        return adjustedDate.toISOString().slice(0, 16);
+    };
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -709,8 +716,8 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
             </div>
 
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-                    <div className="lg:col-span-3 space-y-8">
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+                    <div className="md:col-span-3 space-y-8">
 
                         <form onSubmit={(e) => e.preventDefault()}>
                             <div className="space-y-6">
@@ -848,8 +855,8 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                         </form>
                     </div>
 
-                    <div className="hidden lg:block lg:col-span-1">
-                        <div className="sticky top-28 space-y-8">
+                    <div className="hidden md:block md:col-span-1">
+                        <div className="sticky top-28 self-start h-fit z-20 space-y-8 max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar pl-2">
                             <FormToolbox onAddField={handleAddField} variant="dhivehi" />
                         </div>
                     </div>
@@ -860,7 +867,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
             <Dialog open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}>
                 <DialogContent className="sm:max-w-md bg-gray-900 border-white/10 text-white">
                     <DialogHeader className="text-right space-y-3">
-                        <DialogTitle className="font-faruma">ފޯމުގެ ސެޓިންގްސް</DialogTitle>
+                        <DialogTitle className="font-faruma text-right">ފޯމުގެ ސެޓިންގްސް</DialogTitle>
                         <DialogDescription className="text-gray-400 font-faruma text-sm">
                             ފޯމު ބަލައިގަތުމާއި ގުޅޭ ސެޓިންގްސް
                         </DialogDescription>
@@ -868,7 +875,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                     <div className="space-y-6 mt-4" dir="rtl">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h4 className="text-base font-medium text-white font-faruma">ޖަވާބު ބަލައިގަތުން</h4>
+                                <h4 className="text-base font-medium text-gray-400 text-right font-faruma">ޖަވާބު ބަލައިގަތުން</h4>
                                 <p className="text-xs text-gray-400 font-faruma">މެނުއަލްކޮށް ފޯމު ހުޅުވާ/ބަންދުކުރުމަށް</p>
                             </div>
                             <div className="flex items-center">
@@ -894,13 +901,79 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                             <input
                                 type="datetime-local"
                                 id="closes_at_dv"
-                                value={form.closes_at ? new Date(form.closes_at).toISOString().slice(0, 16) : ''}
+                                value={form.closes_at ? toLocalISOString(form.closes_at) : ''}
                                 onChange={(e) => {
-                                    const val = e.target.value ? new Date(e.target.value).toISOString() : null
-                                    handleUpdateSettings({ closes_at: val })
+                                    // This input is now hidden, we use the composite inputs below
                                 }}
-                                className="block w-full rounded-md bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-500 border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 text-right [color-scheme:dark]"
+                                className="hidden"
                             />
+
+                            {/* Composite Date/Time Picker */}
+                            <div className="grid grid-cols-2 gap-4" dir="ltr">
+                                <div className="space-y-1">
+                                    <label className="text-xs text-gray-400 block text-right font-faruma">ތާރީޚް</label>
+                                    <input
+                                        type="date"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-500 border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 text-center"
+                                        style={{ colorScheme: 'dark' }}
+                                        value={form.closes_at ? toLocalISOString(form.closes_at).split('T')[0] : ''}
+                                        onChange={(e) => {
+                                            const newDate = e.target.value;
+                                            if (!newDate) {
+                                                handleUpdateSettings({ closes_at: null });
+                                                return;
+                                            }
+                                            const currentDateTime = form.closes_at ? toLocalISOString(form.closes_at) : `${newDate}T00:00`;
+                                            const currentTime = currentDateTime.split('T')[1] || '00:00';
+                                            const combined = new Date(`${newDate}T${currentTime}`);
+                                            handleUpdateSettings({ closes_at: combined.toISOString() });
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs text-gray-400 block text-right font-faruma">ގަޑި</label>
+                                    <div className="flex gap-2">
+                                        <select
+                                            className="block w-full rounded-md bg-gray-900 px-1 py-2 text-sm text-gray-400 border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 text-center"
+                                            value={form.closes_at ? toLocalISOString(form.closes_at).split('T')[1].split(':')[0] : '00'}
+                                            onChange={(e) => {
+                                                const newHour = e.target.value;
+                                                const currentDateTime = form.closes_at ? toLocalISOString(form.closes_at) : `${new Date().toISOString().split('T')[0]}T00:00`;
+                                                const [datePart, timePart] = currentDateTime.split('T');
+                                                const [, currentMinute] = (timePart || '00:00').split(':');
+                                                const combined = new Date(`${datePart}T${newHour}:${currentMinute}`);
+                                                handleUpdateSettings({ closes_at: combined.toISOString() });
+                                            }}
+                                        >
+                                            {Array.from({ length: 24 }).map((_, i) => (
+                                                <option key={i} value={i.toString().padStart(2, '0')}>
+                                                    {i.toString().padStart(2, '0')}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <span className="text-white self-center font-bold">:</span>
+                                        <select
+                                            className="block w-full rounded-md bg-gray-900 px-1 py-2 text-sm text-gray-400 border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 text-center"
+                                            value={form.closes_at ? toLocalISOString(form.closes_at).split('T')[1].split(':')[1] : '00'}
+                                            onChange={(e) => {
+                                                const newMinute = e.target.value;
+                                                const currentDateTime = form.closes_at ? toLocalISOString(form.closes_at) : `${new Date().toISOString().split('T')[0]}T00:00`;
+                                                const [datePart, timePart] = currentDateTime.split('T');
+                                                const [currentHour] = (timePart || '00:00').split(':');
+                                                const combined = new Date(`${datePart}T${currentHour}:${newMinute}`);
+                                                handleUpdateSettings({ closes_at: combined.toISOString() });
+                                            }}
+                                        >
+                                            {Array.from({ length: 60 }).map((_, i) => (
+                                                <option key={i} value={i.toString().padStart(2, '0')}>
+                                                    {i.toString().padStart(2, '0')}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                             <p className="text-xs text-gray-400 font-faruma">މި ގަޑީގެ ފަހުން ފޯމަށް ޖަވާބު ބަލައެއް ނުގަނެވޭނެ.</p>
                         </div>
                     </div>
@@ -947,7 +1020,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
             {/* Mobile Toolbox FAB */}
             <button
                 onClick={() => setIsToolboxOpen(true)}
-                className="fixed bottom-6 right-6 lg:hidden h-14 w-14 rounded-full bg-primary text-white shadow-lg shadow-primary/20 flex items-center justify-center hover:bg-primary/90 transition-colors z-[100]"
+                className="fixed bottom-6 right-6 md:hidden h-14 w-14 rounded-full bg-primary text-white shadow-lg shadow-primary/20 flex items-center justify-center hover:bg-primary/90 transition-colors z-[100]"
                 aria-label="ބައިތައް އިތުރުކުރައްވާ"
             >
                 <Plus className="h-6 w-6" />

@@ -80,7 +80,7 @@ export default async function EditFormPage({ params }: { params: { id: string } 
       </nav>
 
       {/* Main Builder Area */}
-      <main className="flex-grow overflow-auto">
+      <main className="flex-grow">
         {isDhivehi ? (
           <DhivehiFormBuilder initialForm={form} initialFields={sortedFields} />
         ) : (

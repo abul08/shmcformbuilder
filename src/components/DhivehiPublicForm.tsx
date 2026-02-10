@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Form, FormField } from '@/types'
 import { submitResponse } from '@/actions/responses'
-import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2 } from 'lucide-react'
+import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Calendar } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, getFileIcon, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
@@ -446,20 +446,22 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                 {field.type === 'date' && (
                                     <input
                                         type="date"
+                                        dir="ltr"
                                         required={field.required}
                                         value={(answers[field.id] as string) || ''}
                                         onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-white shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 text-right font-faruma [color-scheme:dark]"
+                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-white shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 text-left font-inter"
                                     />
                                 )}
 
                                 {field.type === 'time' && (
                                     <input
                                         type="time"
+                                        dir="ltr"
                                         required={field.required}
                                         value={(answers[field.id] as string) || ''}
                                         onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-white shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 text-right font-faruma [color-scheme:dark]"
+                                        className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-white shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm/6 text-left font-inter"
                                     />
                                 )}
 

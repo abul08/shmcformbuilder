@@ -25,7 +25,7 @@ export default async function Home() {
             <PublicLogoHeader />
             <div className="flex flex-col md:flex-row sm:justify-end justify-center mb-10 border-b border-white/10 pb-6 gap-4">
               <div>
-                <h1 className="text-3xl sm:text-right text-center font-waheed text-gray-400">ފޯމުތަށް</h1>
+                <h1 className="text-3xl sm:text-right text-center font-waheed text-gray-400">ފޯމުތައް</h1>
                 <p className="text-gray-600 mt-2 text-2xl sm:text-right text-center font-waheed">އާއްމުކޮށް ހުޅުވާލާފައިވާ ފޯމުތައް</p>
               </div>
 

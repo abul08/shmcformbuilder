@@ -81,7 +81,7 @@ export default function FormToolbox({ onAddField, variant = 'default', className
     ]
 
     return (
-        <div className={`bg-white/5 rounded-lg ring-1 ring-white/10 p-4 sticky top-24 ${className || ''}`}>
+        <div className={`bg-white/5 rounded-lg ring-1 ring-white/10 p-4 ${className || ''}`}>
             {!isModal && (
                 <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                     <Plus className="h-4 w-4 text-primary" />
