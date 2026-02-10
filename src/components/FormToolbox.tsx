@@ -20,7 +20,7 @@ import {
 import { useState } from 'react'
 
 interface FormToolboxProps {
-    onAddField: (type: FormFieldType) => Promise<void>
+    onAddField: (type: FormFieldType, options?: any) => Promise<void>
     variant?: 'default' | 'dhivehi'
     className?: string
     isModal?: boolean
@@ -29,21 +29,24 @@ interface FormToolboxProps {
 export default function FormToolbox({ onAddField, variant = 'default', className, isModal = false }: FormToolboxProps) {
     const [addingType, setAddingType] = useState<string | null>(null);
 
-    const handleFieldClick = async (type: string) => {
+    const handleFieldClick = async (type: string, options?: any) => {
         if (addingType) return;
-        setAddingType(type);
+        setAddingType(type === 'english_answer' ? 'short_text' : type); // Use 'short_text' loading state for english_answer
         try {
-            await onAddField(type as FormFieldType);
+            await onAddField(type as FormFieldType, options);
         } finally {
             setAddingType(null);
         }
     };
-    const textFields = [
+    const textFields: { type: string, label: string, icon: any, description: string, options?: any }[] = [
         { type: 'short_text', label: variant === 'dhivehi' ? 'Short Text (Dhivehi)' : 'Short Text', icon: Type, description: 'Single line input' },
     ]
 
     if (variant === 'dhivehi') {
-        textFields.push({ type: 'english_text', label: 'Short Text (English)', icon: Type, description: 'LTR English input' })
+        textFields.push(
+            { type: 'english_text', label: 'Short Text (English)', icon: Type, description: 'LTR English input' },
+            { type: 'short_text', options: { is_english_answer: true }, label: 'Short Text (English Answer)', icon: Type, description: 'Dhivehi Label, English Input' }
+        )
     } else {
         textFields.push({ type: 'dhivehi_text', label: 'Short Text (Dhivehi)', icon: Type, description: 'RTL Dhivehi input' })
     }
@@ -98,8 +101,8 @@ export default function FormToolbox({ onAddField, variant = 'default', className
                         <div className="grid grid-cols-1 gap-2">
                             {group.items.map((item) => (
                                 <button
-                                    key={item.type}
-                                    onClick={() => handleFieldClick(item.type)}
+                                    key={item.label} // Key needs to be unique, type might be same for different variations
+                                    onClick={() => handleFieldClick(item.type, (item as any).options)}
                                     disabled={addingType !== null}
                                     className={`group flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-white/10 transition-all border border-transparent hover:border-white/5 ${addingType === item.type ? 'bg-white/10 border-primary/20' : ''} ${addingType !== null && addingType !== item.type ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >

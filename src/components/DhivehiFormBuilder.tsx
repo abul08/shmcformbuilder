@@ -122,7 +122,9 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                             <GripVertical className="h-5 w-5" />
                         </div>
                         <span className="text-xs text-gray-400 uppercase tracking-wider font-faruma">
-                            {field.type === 'short_text' && 'ކުރު ޖަވާބު'}
+                            {field.type === 'english_text' && 'ކުރު ޖަވާބު (އިނގިރޭސި)'}
+                            {field.type === 'short_text' && (field.options as any)?.is_english_answer && 'ކުރު ޖަވާބު (އިނގިރޭސި ޖަވާބު)'}
+                            {field.type === 'short_text' && !(field.options as any)?.is_english_answer && 'ކުރު ޖަވާބު'}
                             {field.type === 'long_text' && 'ދިގު ޖަވާބު'}
                             {field.type === 'email' && 'އީމެއިލް'}
                             {field.type === 'number' && 'އަދަދު'}
@@ -165,7 +167,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                             })
                                         }
                                     }}
-                                    placeholder={field.type === 'image' ? 'ފޮޓޯގެ ނަން' : field.type === 'text_block' ? 'ސުރުޚީ...' : field.type === 'consent' ? 'އިޤްރާރުގެ ސުރުޚީ...' : field.type === 'english_text' ? 'English Question...' : "ސުވާލު (ދިވެހި)..."}
+                                    placeholder={field.type === 'image' ? 'ފޮޓޯގެ ނަން' : field.type === 'text_block' ? 'ސުރުޚީ...' : field.type === 'consent' ? 'އިޤްރާރުގެ ސުރުޚީ...' : (field.type === 'english_text' || (field.type === 'short_text' && (field.options as any)?.is_english_answer)) ? 'English Question...' : "ސުވާލު (ދިވެހި)..."}
                                     className={`block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 ${field.type === 'english_text' ? 'text-left font-sans' : 'text-right font-faruma'}`}
                                     dir={field.type === 'english_text' ? 'ltr' : 'rtl'}
                                 />
@@ -180,13 +182,24 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                             <div className="mt-2">
                                 <select
                                     id={`type-${field.id}`}
-                                    value={field.type}
+                                    value={(field.type === 'short_text' && (field.options as any)?.is_english_answer) ? 'english_answer' : field.type}
                                     onChange={(e) => {
-                                        const newType = e.target.value as FormFieldType
-                                        const updates: any = { type: newType }
-                                        // Clear Dhivehi label if switching to English text to prevent it from shadowing the English label
+                                        const val = e.target.value;
+                                        let newType = val as FormFieldType;
+                                        let extraOptions = {};
+
+                                        if (val === 'english_answer') {
+                                            newType = 'short_text';
+                                            extraOptions = { is_english_answer: true };
+                                        } else if (val === 'short_text') {
+                                            extraOptions = { is_english_answer: false };
+                                        }
+
+                                        const updates: any = { type: newType, options: { ...((field.options as any) || {}), ...extraOptions } }
+
+                                        // Clear Dhivehi label if switching to English text
                                         if (newType === 'english_text' && (field.options as any)?.label_dv) {
-                                            updates.options = { ...((field.options as any) || {}), label_dv: '' }
+                                            updates.options.label_dv = ''
                                         }
                                         onUpdate(field.id, updates)
                                     }}
@@ -194,7 +207,8 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                     dir="rtl"
                                 >
                                     <option value="short_text">ކުރު ޖަވާބު</option>
-                                    <option value="english_text">ކުރު ޖަވާބު (އިނގިރޭސި)</option>
+                                    <option value="english_text">ކުރު ޖަވާބު (އިނގިރޭސި ސުވާލު)</option>
+                                    <option value="english_answer">ކުރު ޖަވާބު (އިނގިރޭސި ޖަވާބު)</option>
                                     <option value="long_text">ދިގު ޖަވާބު</option>
                                     <option value="email">އީމެއިލް</option>
                                     <option value="number">އަދަދު</option>
@@ -317,9 +331,9 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                                 })
                                             }
                                         }}
-                                        placeholder={(field.type === 'english_text' || field.type === 'email') ? 'e.g. Type here...' : "މިސާލު (ދިވެހި)..."}
-                                        className={`block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 ${(field.type === 'english_text' || field.type === 'email') ? 'text-left font-sans' : 'text-right font-faruma'}`}
-                                        dir={(field.type === 'english_text' || field.type === 'email') ? 'ltr' : 'rtl'}
+                                        placeholder={(field.type === 'english_text' || field.type === 'email' || (field.type === 'short_text' && (field.options as any)?.is_english_answer)) ? 'e.g. Type here...' : "މިސާލު (ދިވެހި)..."}
+                                        className={`block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 ${(field.type === 'english_text' || field.type === 'email' || (field.type === 'short_text' && (field.options as any)?.is_english_answer)) ? 'text-left font-sans' : 'text-right font-faruma'}`}
+                                        dir={(field.type === 'english_text' || field.type === 'email' || (field.type === 'short_text' && (field.options as any)?.is_english_answer)) ? 'ltr' : 'rtl'}
                                     />
                                 </div>
                             </div>
@@ -509,23 +523,19 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
         }
     }
 
-    const handleAddField = async (type: FormFieldType) => {
+    const handleAddField = async (type: FormFieldType, options?: any) => {
         setIsSaving(true)
         try {
             const result = await addField(form.id, type, fields.length)
             if (result.data) {
                 // Force is_rtl to true for new fields in Dhivehi builder
-                const newFieldRaw = result.data as FormField;
-                // We need to update it immediately to set is_rtl if not present?
-                // Ideally addField should handle it, but we can just update local state and let user save?
-                // Or better, when rendering SortableField, we treat it as RTL.
+                let newFieldRaw = result.data as FormField;
 
-                // Let's assume PublicForm handles RTL based on Form Settings or Field settings.
-                // If Field settings, we should update it.
-                // For now, let's just add it. The user can type dhivehi.
-
-                // Actually, to ensure Public Form renders in RTL, we might need to set `is_rtl: true` in options.
-                // Let's do an immediate update if needed, but for now just adding is fine.
+                // If options provided (e.g. is_english_answer), apply them immediately
+                if (options) {
+                    await updateField(newFieldRaw.id, form.id, { options: { ...((newFieldRaw.options as any) || {}), ...options } })
+                    newFieldRaw = { ...newFieldRaw, options: { ...((newFieldRaw.options as any) || {}), ...options } }
+                }
 
                 setFields([...fields, newFieldRaw])
                 setLastSaved(new Date())

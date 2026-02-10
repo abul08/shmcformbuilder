@@ -253,6 +253,8 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                     // For Dhivehi, prefer dv options if available
                     const options = (field.options as any) || {}
 
+
+
                     let label = field.type === 'english_text' ? field.label : (options.label_dv || field.label)
                     let placeholder = (field.type === 'english_text' || field.type === 'email') ? field.placeholder : (options.placeholder_dv || field.placeholder)
                     let content = options.content_dv || options.content
@@ -271,6 +273,12 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                     <label htmlFor={field.id} className="block sm:text-lg text-md font-medium tracking-normal text-gray-400 text-left font-sans" dir="ltr">
                                         {label}
                                         {field.required && <span className="text-primary ml-1">*</span>}
+                                    </label>
+                                ) : (field.type === 'short_text' && (field.options as any)?.is_english_answer) ? (
+                                    <label htmlFor={field.id} className="block sm:text-2xl text-xl text-gray-400 text-right font-waheed">
+                                        {label}
+                                        {field.required && <span className="text-primary mr-1">*</span>}
+
                                     </label>
                                 ) : (
                                     <label htmlFor={field.id} className="block sm:text-2xl text-xl text-gray-400 text-right font-waheed">
@@ -308,7 +316,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                         </div>
                                     </div>
                                 )}
-                                {field.type === 'short_text' && (
+                                {field.type === 'short_text' && !(field.options as any)?.is_english_answer && (
                                     <input
                                         id={field.id}
                                         type="text"
@@ -347,6 +355,19 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                         placeholder={placeholder || 'Answer...'}
                                         onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
                                         className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-left font-sans"
+                                        dir="ltr"
+                                    />
+                                )}
+
+                                {(field.type === 'short_text' && (field.options as any)?.is_english_answer) && (
+                                    <input
+                                        id={field.id}
+                                        type="text"
+                                        required={field.required}
+                                        value={(answers[field.id] as string) || ''}
+                                        placeholder={placeholder || 'Answer...'}
+                                        onChange={(e) => setAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-right font-sans"
                                         dir="ltr"
                                     />
                                 )}
