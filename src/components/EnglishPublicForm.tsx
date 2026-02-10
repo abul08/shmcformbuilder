@@ -54,7 +54,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
         for (const field of fields) {
             // Skip non-input fields
-            if (field.type === 'text_block' || field.type === 'image') continue
+            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header') continue
 
             const answer = answers[field.id]
             const file = uploadedFiles[field.id]
@@ -254,7 +254,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
                     return (
                         <div key={field.id}>
-                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && (
+                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && field.type !== 'section_header' && (
                                 field.type === 'dhivehi_text' ? (
                                     <label htmlFor={field.id} className="block text-xl font-waheed text-gray-400 text-right" dir="rtl">
                                         {field.label}
@@ -556,6 +556,17 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         <p className="text-xs text-gray-500">
                                             Allowed file types: {ALLOWED_EXTENSIONS.join(', ')} • Maximum size: {MAX_FILE_SIZE / 1024 / 1024}MB
                                         </p>
+                                    </div>
+                                )}
+
+                                {field.type === 'section_header' && (
+                                    <div className="mt-16 mb-8 border-b border-white/10 pb-6 text-left">
+                                        <h3 className="text-2xl sm:text-3xl font-semibold text-gray-400 mb-2">{field.label}</h3>
+                                        {(field.options as any)?.content && (
+                                            <p className="mt-1 text-base text-gray-400 whitespace-pre-wrap leading-relaxed">
+                                                {(field.options as any).content}
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </div>

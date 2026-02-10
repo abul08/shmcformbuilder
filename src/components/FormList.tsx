@@ -91,74 +91,82 @@ export default function FormList({ initialForms }: { initialForms: Form[] }) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {forms.map((form) => {
         const isDhivehiTitle = /[\u0780-\u07BF]/.test(form.title || '');
-        const titleClass = isDhivehiTitle ? 'font-waheed text-right text-lg' : 'text-base font-inter font-semibold text-left';
+        const titleClass = isDhivehiTitle ? 'font-waheed text-right text-xl leading-relaxed' : 'text-lg font-inter font-semibold text-left';
 
         const isDhivehiDesc = /[\u0780-\u07BF]/.test(form.description || '');
-        const descClass = isDhivehiDesc ? 'font-faruma text-right leading-relaxed' : 'font-inter text-left';
+        const descClass = isDhivehiDesc ? 'font-faruma text-right leading-loose' : 'font-inter text-left';
+
+        const settings = form.settings as any || {};
+        const formType = settings.form_type;
+        const formNumber = settings.form_number;
+        const responseCount = (form as any).form_responses?.[0]?.count || 0;
 
         return (
           <div
             key={form.id}
             onClick={(e) => handleCardClick(form.id, e)}
-            className="group relative rounded-lg bg-white/5 ring-1 ring-white/10 hover:ring-white/20 transition-all cursor-pointer overflow-hidden"
+            className="group relative flex flex-col justify-between rounded-xl bg-gray-800/40 border border-white/5 hover:border-white/10 hover:bg-gray-800/60 transition-all duration-300 cursor-pointer overflow-hidden shadow-sm hover:shadow-md hover:shadow-primary/5"
           >
-            <div className="p-5">
-              <div className="flex justify-between items-start gap-2 mb-3">
-                <div className="flex-1 min-w-0">
-                  {(form.settings as any)?.form_type && (
-                    <div className={`text-xs font-medium text-primary mb-1 ${(form.settings as any)?.form_type && /[\u0780-\u07BF]/.test((form.settings as any).form_type) ? 'font-faruma text-right' : 'font-inter text-left'}`}>
-                      {(form.settings as any).form_type}
-                    </div>
+            {/* Card Content */}
+            <div className="p-6 flex-grow flex flex-col">
+              {/* Header Badges */}
+              <div className="flex justify-between items-start gap-3 mb-4">
+                <div className="flex-1 flex flex-wrap gap-2">
+                  {formType && (
+                    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ring-primary/20 bg-primary/5 text-primary-300 ${/[\u0780-\u07BF]/.test(formType) ? 'font-faruma' : ''}`}>
+                      {formType}
+                    </span>
                   )}
-                  {(form.settings as any)?.form_number && (
-                    <div className={`text-[10px] text-gray-500 mb-1 ${(form.settings as any)?.form_type && /[\u0780-\u07BF]/.test((form.settings as any).form_type) ? 'font-faruma text-right' : 'font-inter text-left'}`}>
-                      {/[\u0780-\u07BF]/.test((form.settings as any).form_type || '') ? 'ނަންބަރު: ' : 'Number: '}
-                      {(form.settings as any).form_number}
-                    </div>
+                  {formNumber && (
+                    <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ring-gray-500/20 bg-gray-500/5 text-gray-400">
+                      #{formNumber}
+                    </span>
                   )}
-                  <h3 className={`text-gray-300 truncate group-hover:text-primary transition-colors ${titleClass}`} dir="auto">
-                    {form.title}
-                  </h3>
                 </div>
-                <Badge variant={form.is_published ? 'success' : 'secondary'} className="shrink-0">
+                <Badge variant={form.is_published ? 'success' : 'secondary'} className="shrink-0 shadow-none">
                   {form.is_published ? 'Live' : 'Draft'}
                 </Badge>
               </div>
 
-              <p className={`text-sm text-gray-400 line-clamp-2 min-h-[2.5rem] mb-4 ${descClass}`} dir="auto">
-                {form.description || 'No description provided'}
-              </p>
+              {/* Title & Description */}
+              <div className="mb-6 space-y-2 flex-grow">
+                <h3 className={`text-white group-hover:text-primary transition-colors line-clamp-2 ${titleClass}`} dir="auto">
+                  {form.title}
+                </h3>
+                <p className={`text-sm text-gray-400 line-clamp-3 ${descClass}`} dir="auto">
+                  {form.description || 'No description provided'}
+                </p>
+              </div>
 
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <Edit2 className="h-3 w-3" />
-                <span>{new Date(form.updated_at).toLocaleDateString()}</span>
-                {(form as any).form_responses && (form as any).form_responses[0] && (
-                  <>
-                    <span className="mx-1">•</span>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="h-3 w-3" />
-                      <span>{(form as any).form_responses[0].count} responses</span>
-                    </div>
-                  </>
-                )}
+              {/* Footer Info */}
+              <div className="flex items-center justify-between pt-4 border-t border-white/5 text-xs text-gray-500 mt-auto">
+                <span className="flex items-center gap-1.5">
+                  <Edit2 className="h-3 w-3" />
+                  Updated {new Date(form.updated_at).toLocaleDateString()}
+                </span>
+                <span className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${responseCount > 0 ? 'bg-primary/10 text-primary-300' : 'bg-white/5 text-gray-500'}`}>
+                  <MessageSquare className="h-3 w-3" />
+                  {responseCount}
+                </span>
               </div>
             </div>
 
-            <div className="border-t border-white/10 bg-white/5 px-3 py-2 flex justify-between gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            {/* Hover Actions Overlay */}
+            <div className="absolute inset-x-0 bottom-0 p-3 bg-gray-900/90 backdrop-blur-sm border-t border-white/10 translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 flex justify-between items-center z-10">
               <div className="flex gap-1">
                 <Link
                   href={`/forms/${form.id}/edit`}
-                  className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                  className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors tooltip-trigger"
                   title="Edit Form"
                 >
                   <Edit2 className="h-4 w-4" />
                 </Link>
                 <Link
                   href={`/forms/${form.id}/responses`}
-                  className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                  className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
                   title="View Responses"
                 >
                   <MessageSquare className="h-4 w-4" />
@@ -169,7 +177,7 @@ export default function FormList({ initialForms }: { initialForms: Form[] }) {
                     handleDuplicate(form.id)
                   }}
                   disabled={duplicatingId === form.id}
-                  className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
                   title="Duplicate"
                 >
                   {duplicatingId === form.id ? (
@@ -180,12 +188,12 @@ export default function FormList({ initialForms }: { initialForms: Form[] }) {
                 </button>
               </div>
 
-              <div className="flex gap-1">
+              <div className="flex gap-1 border-l border-white/10 pl-1">
                 {form.is_published && (
                   <Link
                     href={`/f/${form.slug}`}
                     target="_blank"
-                    className="rounded p-1.5 hover:bg-white/10 text-primary hover:text-primary/80 transition-colors"
+                    className="p-2 rounded-lg hover:bg-primary/20 text-primary hover:text-primary-300 transition-colors"
                     title="View Public Form"
                   >
                     <ExternalLink className="h-4 w-4" />
@@ -196,7 +204,7 @@ export default function FormList({ initialForms }: { initialForms: Form[] }) {
                     e.stopPropagation()
                     handleDelete(form.id)
                   }}
-                  className="rounded p-1.5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
+                  className="p-2 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="h-4 w-4" />

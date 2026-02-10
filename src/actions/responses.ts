@@ -45,17 +45,24 @@ export async function submitResponse(formId: string, answers: Record<string, any
   }
 
   // 2. Create answer records
+  console.log('[SubmitResponse] Creating answers for response:', response.id)
   const answerEntries = Object.entries(answers).map(([fieldId, value]) => ({
     response_id: response.id,
     field_id: fieldId,
     value: value,
   }))
 
+  console.log('[SubmitResponse] Answer entries payload:', JSON.stringify(answerEntries, null, 2))
+
   const { error: answersError } = await adminSupabase
     .from('form_answers')
     .insert(answerEntries)
 
-  if (answersError) return { error: answersError.message }
+  if (answersError) {
+    console.error('[SubmitResponse] Answers Insert Error:', answersError)
+    return { error: answersError.message }
+  }
 
+  console.log('[SubmitResponse] Submission successful')
   return { success: true }
 }

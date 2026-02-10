@@ -53,7 +53,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
         for (const field of fields) {
             // Skip non-input fields
-            if (field.type === 'text_block' || field.type === 'image') continue
+            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header') continue
 
             const answer = answers[field.id]
             const file = uploadedFiles[field.id]
@@ -268,9 +268,9 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
                     return (
                         <div key={field.id}>
-                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && (
+                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && field.type !== 'section_header' && (
                                 field.type === 'english_text' ? (
-                                    <label htmlFor={field.id} className="block sm:text-lg text-md font-medium tracking-normal text-gray-400 text-left font-sans" dir="ltr">
+                                    <label htmlFor={field.id} className="block sm:text-lg text-md font-medium tracking-normal text-gray-400 text-left font-sans " dir="ltr">
                                         {label}
                                         {field.required && <span className="text-primary ml-1">*</span>}
                                     </label>
@@ -580,6 +580,17 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                         <p className="text-xs text-gray-500 text-right font-faruma">
                                             Allowed file types: {ALLOWED_EXTENSIONS.join(', ')} • Maximum size: {MAX_FILE_SIZE / 1024 / 1024}MB
                                         </p>
+                                    </div>
+                                )}
+
+                                {field.type === 'section_header' && (
+                                    <div className="mt-16 mb-4 border-b border-white/10 pb-6 text-right">
+                                        <h3 className="text-2xl sm:text-3xl text-primary/65  font-waheed">{label}</h3>
+                                        {content && (
+                                            <p className="mt-1 text-base text-gray-400 whitespace-pre-wrap font-faruma leading-relaxed">
+                                                {content}
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </div>

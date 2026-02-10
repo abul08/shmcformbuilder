@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import ResponsesTable from '@/components/ResponsesTable'
 
+import { createAdminClient } from '@/lib/supabase/admin'
+
 export default async function ResponsesPage({ params }: { params: { id: string } }) {
   const { id } = await params
   const supabase = await createClient()
@@ -13,6 +15,15 @@ export default async function ResponsesPage({ params }: { params: { id: string }
   if (!user) {
     redirect('/login')
   }
+
+  // Check if user is a Super User
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isSuperUser = profile?.role === 'SUPER_USER'
 
   const { data: form, error: formError } = await supabase
     .from('forms')
@@ -24,11 +35,18 @@ export default async function ResponsesPage({ params }: { params: { id: string }
     notFound()
   }
 
-  const { data: responses, error: responsesError } = await supabase
+  // Use admin client for Super Users to bypass RLS, otherwise use standard client
+  const client = isSuperUser ? await createAdminClient() : supabase
+
+  const { data: responses, error: responsesError } = await client
     .from('form_responses')
     .select('*, form_answers(*)')
     .eq('form_id', id)
     .order('submitted_at', { ascending: false })
+
+  if (responsesError) {
+    console.error('[ResponsesPage] Error fetching responses:', responsesError)
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">

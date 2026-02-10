@@ -22,6 +22,7 @@ export type FormFieldType =
   | 'consent'
   | 'english_text'
   | 'dhivehi_text'
+  | 'section_header'
 
 export interface Form {
   id: string

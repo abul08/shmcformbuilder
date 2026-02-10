@@ -109,12 +109,13 @@ export async function duplicateForm(id: string) {
 
   // 3. Duplicate fields
   if (form.form_fields && form.form_fields.length > 0) {
-    const newFields = form.form_fields.map((field: any) => ({
-      ...field,
-      id: undefined,
-      form_id: newForm.id,
-      created_at: undefined,
-    }))
+    const newFields = form.form_fields.map((field: any) => {
+      const { id, created_at, form_id, active, ...rest } = field
+      return {
+        ...rest,
+        form_id: newForm.id,
+      }
+    })
 
     const { error: fieldsError } = await supabase
       .from('form_fields')

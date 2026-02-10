@@ -9,59 +9,64 @@ import { useState } from 'react'
 import { useToast } from '@/components/ui/toast'
 import { getFileIcon, formatFileSize } from '@/lib/fileUpload'
 import { getSignedUrl } from '@/actions/files'
+import * as XLSX from 'xlsx'
 
 interface ResponseWithAnswers extends FormResponse {
   form_answers: FormAnswer[]
 }
 
-export default function ResponsesTable({ 
-  form, 
-  fields, 
-  responses 
-}: { 
-  form: Form, 
-  fields: FormField[], 
-  responses: ResponseWithAnswers[] 
+export default function ResponsesTable({
+  form,
+  fields,
+  responses
+}: {
+  form: Form,
+  fields: FormField[],
+  responses: ResponseWithAnswers[]
 }) {
   const [searchTerm, setSearchTerm] = useState('')
   const { addToast } = useToast()
 
-  const sortedFields = [...fields].sort((a, b) => a.order_index - b.order_index)
+  const sortedFields = [...fields]
+    .filter(f => !['section_header', 'text_block', 'image'].includes(f.type))
+    .sort((a, b) => a.order_index - b.order_index)
 
-  const exportToCSV = () => {
+  const exportToExcel = () => {
     try {
       const headers = ['Submitted At', ...sortedFields.map(f => f.label)]
-      const rows = responses.map(r => {
-        const row = [new Date(r.submitted_at).toLocaleString()]
+      const data = responses.map(r => {
+        const row: any = { 'Submitted At': new Date(r.submitted_at).toLocaleString() }
         sortedFields.forEach(f => {
           const answer = r.form_answers.find(a => a.field_id === f.id)
           let value = answer?.value || ''
-          
+
           // Handle file uploads - export file name
           if (f.type === 'file' && typeof value === 'object' && value !== null && 'fileName' in value) {
             value = (value as any).fileName || 'Uploaded file'
           } else if (Array.isArray(value)) {
             value = value.join(', ')
           }
-          
-          row.push(`"${String(value).replace(/"/g, '""')}"`)
+
+          row[f.label] = value
         })
-        return row.join(',')
+        return row
       })
 
-      const csvContent = [headers.join(','), ...rows].join('\n')
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      const link = document.createElement('a')
-      const url = URL.createObjectURL(blob)
-      link.setAttribute('href', url)
-      link.setAttribute('download', `${form.title.replace(/\s+/g, '_')}_responses.csv`)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      addToast(`Exported ${responses.length} responses to CSV`, 'success')
+      const wb = XLSX.utils.book_new()
+      const ws = XLSX.utils.json_to_sheet(data, { header: headers })
+
+      // Auto-width columns
+      const colWidths = headers.map(header => ({
+        wch: Math.max(header.length, ...data.map(row => String(row[header] || '').length)) + 2
+      }))
+      ws['!cols'] = colWidths
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Responses')
+      XLSX.writeFile(wb, `${form.title.replace(/\s+/g, '_')}_responses.xlsx`)
+
+      addToast(`Exported ${responses.length} responses to Excel`, 'success')
     } catch (error) {
+      console.error('Export error:', error)
       addToast('Failed to export responses', 'error')
     }
   }
@@ -74,7 +79,7 @@ export default function ResponsesTable({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Filter by content..." 
+            placeholder="Filter by content..."
             className="block w-full rounded-md bg-white/5 pl-10 pr-3 py-2 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -89,11 +94,11 @@ export default function ResponsesTable({
             Columns
           </button>
           <button
-            onClick={exportToCSV}
+            onClick={exportToExcel}
             className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors"
           >
             <Download className="h-4 w-4 mr-2 inline -mt-0.5" />
-            Export CSV
+            Export Excel
           </button>
         </div>
       </div>
@@ -147,7 +152,7 @@ export default function ResponsesTable({
                   {sortedFields.map(field => {
                     const answer = response.form_answers.find(a => a.field_id === field.id)
                     let displayValue = answer?.value || '-'
-                    
+
                     // Handle file uploads
                     if (field.type === 'file' && typeof displayValue === 'object' && displayValue !== null && 'fileName' in displayValue) {
                       const fileData = displayValue as any
@@ -173,10 +178,10 @@ export default function ResponsesTable({
                         </td>
                       )
                     }
-                    
+
                     // Handle arrays (checkboxes)
                     if (Array.isArray(displayValue)) displayValue = displayValue.join(', ')
-                    
+
                     return (
                       <td key={field.id} className="px-6 py-4">
                         <div className="text-sm text-gray-300 line-clamp-2 max-w-[250px]">
@@ -196,7 +201,7 @@ export default function ResponsesTable({
           </tbody>
         </table>
       </div>
-      
+
       {/* Table Footer / Pagination */}
       <div className="p-4 bg-gray-800/30 border-t border-white/10 flex justify-between items-center text-xs font-semibold uppercase tracking-wider text-gray-400">
         <span>Showing {responses.length} responses</span>

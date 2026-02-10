@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Plus, LayoutDashboard, LogOut, Search, Filter, Shield } from 'lucide-react'
@@ -27,7 +28,10 @@ export default async function DashboardPage() {
   const isSuperUser = profile?.role === 'SUPER_USER'
 
   // 3. Construct Query
-  let query = supabase
+  // Use admin client for Super Users to bypass RLS for response counts
+  const client = isSuperUser ? await createAdminClient() : supabase
+
+  let query = client
     .from('forms')
     .select('*, form_responses(count)')
     .order('created_at', { ascending: false })

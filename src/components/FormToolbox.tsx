@@ -77,6 +77,7 @@ export default function FormToolbox({ onAddField, variant = 'default', className
                 { type: 'time', label: 'Time', icon: Clock, description: 'Time selector' },
                 { type: 'file', label: 'File Upload', icon: Upload, description: 'Allow file attachments' },
                 { type: 'image', label: 'Image', icon: ImageIcon, description: 'Embed an image' },
+                { type: 'section_header', label: 'Section Header', icon: Type, description: 'Add a section break' },
                 { type: 'text_block', label: 'Text Block', icon: Pilcrow, description: 'Static text and heading' },
                 { type: 'consent', label: 'Consent', icon: CheckSquare, description: 'Terms agreement checkbox' },
             ]

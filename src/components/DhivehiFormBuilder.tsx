@@ -135,6 +135,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                             {field.type === 'file' && 'ފައިލް އަޕްލޯޑް'}
                             {field.type === 'image' && 'ފޮޓޯ'}
                             {field.type === 'text_block' && 'ލިޔުންކޮޅެއް'}
+                            {field.type === 'section_header' && 'ބައި (ސެކްޝަން)'}
                         </span>
                     </div>
                     <Button
@@ -152,7 +153,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         {/* Label Editor */}
                         <div className="sm:col-span-4">
                             <label htmlFor={`label-${field.id}`} className="block text-lg tracking-wide text-gray-300 font-waheed">
-                                {field.type === 'image' ? 'ސުރުޚީ' : field.type === 'text_block' ? 'ސުރުޚީ' : field.type === 'consent' ? 'ސުރުޚީ' : 'ސުވާލު'}
+                                {field.type === 'image' ? 'ސުރުޚީ' : field.type === 'text_block' ? 'ސުރުޚީ' : field.type === 'consent' ? 'ސުރުޚީ' : field.type === 'section_header' ? 'ސެކްޝަންގެ ނަން' : 'ސުވާލު'}
                             </label>
                             <div className="mt-2">
                                 <input
@@ -167,7 +168,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                             })
                                         }
                                     }}
-                                    placeholder={field.type === 'image' ? 'ފޮޓޯގެ ނަން' : field.type === 'text_block' ? 'ސުރުޚީ...' : field.type === 'consent' ? 'އިޤްރާރުގެ ސުރުޚީ...' : (field.type === 'english_text' || (field.type === 'short_text' && (field.options as any)?.is_english_answer)) ? 'English Question...' : "ސުވާލު (ދިވެހި)..."}
+                                    placeholder={field.type === 'image' ? 'ފޮޓޯގެ ނަން' : field.type === 'text_block' ? 'ސުރުޚީ...' : field.type === 'consent' ? 'އިޤްރާރުގެ ސުރުޚީ...' : field.type === 'section_header' ? 'ސެކްޝަންގެ ނަން...' : (field.type === 'english_text' || (field.type === 'short_text' && (field.options as any)?.is_english_answer)) ? 'English Question...' : "ސުވާލު (ދިވެހި)..."}
                                     className={`block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 ${field.type === 'english_text' ? 'text-left font-sans' : 'text-right font-faruma'}`}
                                     dir={field.type === 'english_text' ? 'ltr' : 'rtl'}
                                 />
@@ -219,6 +220,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                     <option value="file">ފައިލް އަޕްލޯޑް</option>
                                     <option value="image">ފޮޓޯ</option>
                                     <option value="text_block">ލިޔުންކޮޅެއް</option>
+                                    <option value="section_header">ބައި (ސެކްޝަން)</option>
                                     <option value="consent">އިޤްރާރު</option>
                                 </select>
                             </div>
@@ -294,19 +296,19 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         )}
 
                         {/* Text Block & Consent Content */}
-                        {(field.type === 'text_block' || field.type === 'consent') && (
+                        {(field.type === 'text_block' || field.type === 'consent' || field.type === 'section_header') && (
                             <div className="col-span-full">
                                 <label className="block text-sm text-gray-400 mb-1 text-right font-faruma">
-                                    {field.type === 'consent' ? 'ތަފްސީލް / އެއްބަސްވުން' : 'ތަފްސީލު'}
+                                    {field.type === 'consent' ? 'ތަފްސީލް / އެއްބަސްވުން' : field.type === 'section_header' ? 'ސެކްޝަންގެ ތަފްސީލް (އިޚްތިޔާރީ)' : 'ތަފްސީލު'}
                                 </label>
                                 <textarea
-                                    rows={4}
+                                    rows={field.type === 'section_header' ? 2 : 4}
                                     dir="rtl"
                                     value={(field.options as any)?.content_dv || ''}
                                     onChange={(e) => onUpdate(field.id, {
                                         options: { ...(field.options as any || {}), content_dv: latinToThaana(e.target.value) }
                                     })}
-                                    placeholder={field.type === 'consent' ? 'އެއްބަސްވުން ލިޔުއްވާ...' : "ތަފްސީލު ލިޔުއްވާ..."}
+                                    placeholder={field.type === 'consent' ? 'އެއްބަސްވުން ލިޔުއްވާ...' : field.type === 'section_header' ? 'ސެކްޝަންގެ އިތުރު ތަފްސީލް...' : "ތަފްސީލު ލިޔުއްވާ..."}
                                     className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white text-right font-faruma outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                                 ></textarea>
                             </div>
@@ -428,7 +430,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         )}
 
                         {/* Required Toggle */}
-                        {field.type !== 'image' && field.type !== 'text_block' && (
+                        {field.type !== 'image' && field.type !== 'text_block' && field.type !== 'section_header' && (
                             <div className="col-span-full">
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-6 shrink-0 items-center">
