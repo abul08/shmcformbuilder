@@ -1,13 +1,41 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { FormField, FormFieldType, Json } from '@/types'
 
-export async function addField(formId: string, type: FormFieldType, orderIndex: number) {
+async function getSupabaseClient() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const { data, error } = await supabase
+  if (!user) return { client: supabase, user: null }
+
+  // Check if user is Super User
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isSuperUser = profile?.role === 'SUPER_USER'
+
+  // If Super User, return Admin Client to bypass RLS for fields
+  // Otherwise return standard client
+  if (isSuperUser) {
+    const adminClient = await createAdminClient()
+    return { client: adminClient, user, isSuperUser: true }
+  }
+
+  return { client: supabase, user, isSuperUser: false }
+}
+
+export async function addField(formId: string, type: FormFieldType, orderIndex: number) {
+  const { client, user } = await getSupabaseClient()
+
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data, error } = await client
     .from('form_fields')
     .insert({
       form_id: formId,
@@ -26,9 +54,11 @@ export async function addField(formId: string, type: FormFieldType, orderIndex: 
 }
 
 export async function updateField(id: string, formId: string, updates: Partial<FormField>) {
-  const supabase = await createClient()
+  const { client, user } = await getSupabaseClient()
 
-  const { error } = await supabase
+  if (!user) return { error: 'Unauthorized' }
+
+  const { error } = await client
     .from('form_fields')
     .update(updates)
     .eq('id', id)
@@ -39,9 +69,11 @@ export async function updateField(id: string, formId: string, updates: Partial<F
 }
 
 export async function deleteField(id: string, formId: string) {
-  const supabase = await createClient()
+  const { client, user } = await getSupabaseClient()
 
-  const { error } = await supabase
+  if (!user) return { error: 'Unauthorized' }
+
+  const { error } = await client
     .from('form_fields')
     .delete()
     .eq('id', id)
@@ -52,7 +84,9 @@ export async function deleteField(id: string, formId: string) {
 }
 
 export async function reorderFields(formId: string, fieldIds: string[]) {
-  const supabase = await createClient()
+  const { client, user } = await getSupabaseClient()
+
+  if (!user) return { error: 'Unauthorized' }
 
   const updates = fieldIds.map((id, index) => ({
     id,
@@ -63,7 +97,7 @@ export async function reorderFields(formId: string, fieldIds: string[]) {
   // but we can use a RPC or just multiple calls for now. For simplicity, multiple calls.
   // In a real app, a single RPC would be better.
   for (const update of updates) {
-    await supabase
+    await client
       .from('form_fields')
       .update({ order_index: update.order_index })
       .eq('id', update.id)
@@ -73,10 +107,11 @@ export async function reorderFields(formId: string, fieldIds: string[]) {
 }
 
 export async function updateFormDetails(id: string, updates: { title?: string, description?: string | null, settings?: Json }, slug?: string) {
+  const { client, user } = await getSupabaseClient()
 
-  const supabase = await createClient()
+  if (!user) return { error: 'Unauthorized' }
 
-  const { error } = await supabase
+  const { error } = await client
     .from('forms')
     .update(updates)
     .eq('id', id)
