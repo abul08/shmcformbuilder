@@ -12,7 +12,7 @@ export default async function Home() {
 
   const { data: forms } = await supabase
     .from('forms')
-    .select('id, title, description, slug, settings')
+    .select('id, title, description, slug, settings, published_at')
     .eq('is_published', true)
     .order('created_at', { ascending: false })
 
@@ -43,8 +43,15 @@ export default async function Home() {
                   <Link key={form.id} href={`/f/${form.slug}`} className="block group">
                     <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
                       {(form.settings as any)?.form_type && (
-                        <div className={`text-md  text-gray-500 opacity-75 mb-1 ${(form.settings as any)?.form_type && /[\u0780-\u07BF]/.test((form.settings as any).form_type) ? 'font-faruma text-right pb-2 text-lg' : 'font-inter font-medium text-left'}`}>
-                          {(form.settings as any).form_type}
+                        <div className="flex justify-between items-start mb-1">
+                          <div className={`text-md text-gray-500 opacity-75 ${(form.settings as any)?.form_type && /[\u0780-\u07BF]/.test((form.settings as any).form_type) ? 'font-faruma text-right text-lg' : 'font-inter font-medium text-left'}`}>
+                            {(form.settings as any).form_type}
+                          </div>
+                          {form.published_at && (
+                            <span className="text-xs text-gray-500 font-inter">
+                              {new Date(form.published_at).toLocaleDateString()}
+                            </span>
+                          )}
                         </div>
                       )}
 

@@ -10,6 +10,17 @@ import { useToast } from '@/components/ui/toast'
 import { getFileIcon, formatFileSize } from '@/lib/fileUpload'
 import { getSignedUrl } from '@/actions/files'
 import * as XLSX from 'xlsx'
+import { Trash2, Loader2 } from 'lucide-react'
+import { clearFormResponses } from '@/actions/responses'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { useRouter } from 'next/navigation'
 
 interface ResponseWithAnswers extends FormResponse {
   form_answers: FormAnswer[]
@@ -26,6 +37,36 @@ export default function ResponsesTable({
 }) {
   const [searchTerm, setSearchTerm] = useState('')
   const { addToast } = useToast()
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const router = useRouter()
+
+  const handleClearResponses = () => {
+    setConfirmText('')
+    setIsConfirmOpen(true)
+  }
+
+  const confirmClear = async () => {
+    if (confirmText !== 'DELETE') return
+
+    setIsClearing(true)
+    setIsConfirmOpen(false) // Close dialog so we can see the loading state on the button
+
+    try {
+      const result = await clearFormResponses(form.id)
+      if (result.error) {
+        addToast(result.error, 'error')
+      } else {
+        addToast('All responses cleared successfully', 'success')
+        router.refresh()
+      }
+    } catch (error) {
+      addToast('Failed to clear responses', 'error')
+    } finally {
+      setIsClearing(false)
+    }
+  }
 
   const sortedFields = [...fields]
     .filter(f => !['section_header', 'text_block', 'image'].includes(f.type))
@@ -33,32 +74,59 @@ export default function ResponsesTable({
 
   const exportToExcel = () => {
     try {
-      const headers = ['Submitted At', ...sortedFields.map(f => f.label)]
-      const data = responses.map(r => {
-        const row: any = { 'Submitted At': new Date(r.submitted_at).toLocaleString() }
-        sortedFields.forEach(f => {
+      // Filter out non-data fields just like the table view
+      const validFields = [...fields]
+        .filter(f => !['section_header', 'text_block', 'image', 'layout'].includes(f.type))
+        .sort((a, b) => a.order_index - b.order_index)
+
+      // Prepare Headers
+      const headers = ['Submitted At', ...validFields.map(f => (f.options as any)?.label_dv || f.label || f.type)]
+
+      // Prepare Data Rows
+      const dataRows = responses.map(r => {
+        const submittedAt = new Date(r.submitted_at).toLocaleString()
+        const rowData = validFields.map(f => {
           const answer = r.form_answers.find(a => a.field_id === f.id)
-          let value = answer?.value || ''
+          let value = answer?.value
+
+          // Handle null/undefined
+          if (value === null || value === undefined) {
+            return ''
+          }
 
           // Handle file uploads - export file name
           if (f.type === 'file' && typeof value === 'object' && value !== null && 'fileName' in value) {
-            value = (value as any).fileName || 'Uploaded file'
-          } else if (Array.isArray(value)) {
-            value = value.join(', ')
+            return (value as any).fileName || 'Uploaded file'
           }
 
-          row[f.label] = value
+          // Handle arrays (checkboxes)
+          if (Array.isArray(value)) {
+            return value.join(', ')
+          }
+
+          // Handle objects
+          if (typeof value === 'object') {
+            return JSON.stringify(value)
+          }
+
+          return value
         })
-        return row
+
+        return [submittedAt, ...rowData]
       })
 
+      // Create Worksheet from Array of Arrays
       const wb = XLSX.utils.book_new()
-      const ws = XLSX.utils.json_to_sheet(data, { header: headers })
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows])
 
       // Auto-width columns
-      const colWidths = headers.map(header => ({
-        wch: Math.max(header.length, ...data.map(row => String(row[header] || '').length)) + 2
-      }))
+      const colWidths = headers.map((header, i) => {
+        const maxContentLength = Math.max(
+          header.length,
+          ...dataRows.map(row => String(row[i] || '').length)
+        )
+        return { wch: Math.min(maxContentLength + 2, 50) } // Cap width at 50
+      })
       ws['!cols'] = colWidths
 
       XLSX.utils.book_append_sheet(wb, ws, 'Responses')
@@ -100,8 +168,62 @@ export default function ResponsesTable({
             <Download className="h-4 w-4 mr-2 inline -mt-0.5" />
             Export Excel
           </button>
+          {responses.length > 0 && (
+            <button
+              onClick={handleClearResponses}
+              disabled={isClearing}
+              className="rounded-md bg-red-600/10 border border-red-600/20 px-4 py-2 text-sm font-semibold text-red-500 hover:bg-red-600/20 hover:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isClearing ? (
+                <Loader2 className="h-4 w-4 mr-2 inline animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2 inline -mt-0.5" />
+              )}
+              Clear responses
+            </button>
+          )}
         </div>
       </div>
+
+      <Dialog open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)}>
+        <DialogContent className="bg-gray-900 border-white/10 text-white sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Clear all responses?</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              This action cannot be undone. This will permanently delete all {responses.length} responses for this form.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="confirm-delete" className="text-sm font-medium text-gray-200">
+                Type <span className="font-bold text-red-400">DELETE</span> to confirm
+              </label>
+              <input
+                id="confirm-delete"
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                className="bg-gray-800 border-white/10 text-white rounded-md p-2 text-sm focus:border-red-500 focus:ring-red-500"
+                placeholder="DELETE"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmOpen(false)} className="border-white/10 hover:bg-white/10 hover:text-white bg-transparent text-white">
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmClear}
+              disabled={confirmText !== 'DELETE'}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Clear Responses
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Table Area */}
       <div className="overflow-x-auto">
@@ -114,7 +236,7 @@ export default function ResponsesTable({
               {sortedFields.map(field => (
                 <th key={field.id} className="px-6 py-4 font-semibold uppercase tracking-wider text-xs text-gray-400 min-w-[200px] max-w-[300px]">
                   <div className="flex items-center gap-2">
-                    <span className="truncate">{field.label}</span>
+                    <span className="truncate">{(field.options as any)?.label_dv || field.label || field.type}</span>
                   </div>
                 </th>
               ))}
@@ -209,6 +331,6 @@ export default function ResponsesTable({
           <span>Page 1 of 1</span>
         </div>
       </div>
-    </div>
+    </div >
   )
 }

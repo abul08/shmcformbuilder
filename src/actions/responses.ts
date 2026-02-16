@@ -8,7 +8,7 @@ export async function submitResponse(formId: string, answers: Record<string, any
   const supabase = await createClient()
   const adminSupabase = await createAdminClient()
 
-  console.log('[SubmitResponse] Attempting submission for Form ID:', formId)
+
 
   // Debug: Check if form exists and is published
   const { data: formCheck, error: formCheckError } = await supabase
@@ -22,7 +22,7 @@ export async function submitResponse(formId: string, answers: Record<string, any
     return { error: `Form Check Failed: ${formCheckError?.message || 'Form not found or unpublished'}` }
   }
 
-  console.log('[SubmitResponse] Form found:', formCheck)
+
 
   if (!formCheck.is_published) {
     console.error('[SubmitResponse] Form is NOT published.')
@@ -45,14 +45,14 @@ export async function submitResponse(formId: string, answers: Record<string, any
   }
 
   // 2. Create answer records
-  console.log('[SubmitResponse] Creating answers for response:', response.id)
+
   const answerEntries = Object.entries(answers).map(([fieldId, value]) => ({
     response_id: response.id,
     field_id: fieldId,
     value: value,
   }))
 
-  console.log('[SubmitResponse] Answer entries payload:', JSON.stringify(answerEntries, null, 2))
+
 
   const { error: answersError } = await adminSupabase
     .from('form_answers')
@@ -63,6 +63,74 @@ export async function submitResponse(formId: string, answers: Record<string, any
     return { error: answersError.message }
   }
 
-  console.log('[SubmitResponse] Submission successful')
+
+  return { success: true }
+}
+
+export async function clearFormResponses(formId: string) {
+  const supabase = await createClient()
+  const adminSupabase = await createAdminClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized' }
+  }
+
+  // 1. Verify Ownership
+  const { data: form, error: formError } = await supabase
+    .from('forms')
+    .select('user_id')
+    .eq('id', formId)
+    .single()
+
+  if (formError || !form) {
+    return { error: 'Form not found' }
+  }
+
+  // Check if user is owner OR Super User
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (form.user_id !== user.id && profile?.role !== 'SUPER_USER') {
+    return { error: 'Insufficient permissions' }
+  }
+
+  // 2. Delete Responses & Answers (Admin Client)
+
+  // A. Get all response IDs
+  const { data: responses } = await adminSupabase
+    .from('form_responses')
+    .select('id')
+    .eq('form_id', formId)
+
+  if (responses && responses.length > 0) {
+    const responseIds = responses.map(r => r.id)
+
+    // Delete answers
+    const { error: answersError } = await adminSupabase
+      .from('form_answers')
+      .delete()
+      .in('response_id', responseIds)
+
+    if (answersError) {
+      console.error('Error deleting answers:', answersError)
+      // Continue anyway as RLS might be weird, but usually this is needed if no cascade 
+    }
+  }
+
+  // Delete Responses
+  const { error: deleteError } = await adminSupabase
+    .from('form_responses')
+    .delete()
+    .eq('form_id', formId)
+
+  if (deleteError) {
+    return { error: deleteError.message }
+  }
+
+  revalidatePath(`/forms/${formId}/responses`)
   return { success: true }
 }

@@ -36,6 +36,7 @@ export interface Form {
   created_at: string
   updated_at: string
   settings: Json | null
+  published_at: string | null
 }
 
 export interface FormField {

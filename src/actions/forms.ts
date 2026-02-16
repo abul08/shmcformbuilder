@@ -53,7 +53,10 @@ export async function togglePublish(id: string, isPublished: boolean) {
   const supabase = await createClient()
   const { error } = await supabase
     .from('forms')
-    .update({ is_published: isPublished })
+    .update({
+      is_published: isPublished,
+      published_at: isPublished ? new Date().toISOString() : null
+    })
     .eq('id', id)
 
   if (error) {

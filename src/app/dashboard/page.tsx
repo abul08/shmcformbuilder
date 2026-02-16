@@ -132,7 +132,7 @@ export default async function DashboardPage() {
                 </a>
               </div>
             ) : (
-              <FormList initialForms={forms || []} />
+              <FormList initialForms={forms || []} isSuperUser={isSuperUser} />
             )}
           </div>
         </div>

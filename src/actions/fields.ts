@@ -73,7 +73,7 @@ export async function reorderFields(formId: string, fieldIds: string[]) {
 }
 
 export async function updateFormDetails(id: string, updates: { title?: string, description?: string | null, settings?: Json }, slug?: string) {
-  console.log('Updating form details:', id, JSON.stringify(updates, null, 2))
+
   const supabase = await createClient()
 
   const { error } = await supabase
