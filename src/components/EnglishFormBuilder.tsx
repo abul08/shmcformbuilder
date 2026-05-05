@@ -314,7 +314,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                             onUpdate(field.id, {
                                                 options: {
                                                     ...(field.options as any || {}),
-                                                    categories: [...cats, { name: 'New Category', sizes: [] }]
+                                                    categories: [...cats, { name: 'New Category', sizes: [], price: 0 }]
                                                 }
                                             })
                                         }}
@@ -341,6 +341,25 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                                     placeholder="Category name"
                                                     className="flex-1 bg-transparent text-sm font-semibold text-white outline-none border-b border-transparent focus:border-primary/50 pb-0.5"
                                                 />
+                                                {/* Price per unit */}
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <span className="text-xs text-gray-500">MVR</span>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        value={(cat as any).price ?? ''}
+                                                        onChange={(e) => {
+                                                            const cats = [...((field.options as any)?.categories || [])]
+                                                            cats[catIdx] = { ...cats[catIdx], price: e.target.value === '' ? 0 : parseFloat(e.target.value) }
+                                                            onUpdate(field.id, { options: { ...(field.options as any || {}), categories: cats } })
+                                                        }}
+                                                        placeholder="0"
+                                                        title="Price per piece"
+                                                        className="w-20 bg-white/5 border border-white/10 rounded text-xs text-gray-200 text-right px-2 py-1 outline-none focus:border-primary/50 focus:bg-white/10 tabular-nums"
+                                                    />
+                                                    <span className="text-xs text-gray-500">/pc</span>
+                                                </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => {

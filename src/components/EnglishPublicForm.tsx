@@ -759,19 +759,24 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
                                         {/* ── Consolidated Order Summary ──────────────────── */}
                                         {(() => {
-                                            const cats: { name: string; sizes: string[] }[] = (field.options as any)?.categories || []
+                                            const cats: { name: string; sizes: string[]; price?: number }[] = (field.options as any)?.categories || []
                                             const fieldAnswer = (answers[field.id] as any) || {}
+                                            const hasPricing = cats.some(c => Number((c as any).price) > 0)
+
                                             // Build rows only for filled quantities
                                             const summaryRows = cats
                                                 .map(cat => {
                                                     const catData = fieldAnswer[cat.name] || {}
+                                                    const price = Number((cat as any).price) || 0
                                                     const sizes = (cat.sizes || []).filter((s: string) => Number(catData[s]) > 0)
-                                                    const catTotal = sizes.reduce((sum, s) => sum + Number(catData[s]), 0)
-                                                    return { name: cat.name, sizes, catData, catTotal }
+                                                    const catQty = sizes.reduce((sum, s) => sum + Number(catData[s]), 0)
+                                                    const catAmount = catQty * price
+                                                    return { name: cat.name, sizes, catData, catQty, price, catAmount }
                                                 })
-                                                .filter(row => row.catTotal > 0)
+                                                .filter(row => row.catQty > 0)
 
-                                            const grandTotal = summaryRows.reduce((sum, row) => sum + row.catTotal, 0)
+                                            const grandQty = summaryRows.reduce((sum, row) => sum + row.catQty, 0)
+                                            const grandAmount = summaryRows.reduce((sum, row) => sum + row.catAmount, 0)
 
                                             if (summaryRows.length === 0) return null
 
@@ -780,19 +785,37 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                     {/* Header */}
                                                     <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border-b border-primary/20">
                                                         <p className="text-xs font-bold uppercase tracking-wider text-primary">Order Summary</p>
-                                                        <span className="text-xs font-bold text-primary tabular-nums">
-                                                            Grand Total: {grandTotal}
-                                                        </span>
+                                                        <div className="text-right">
+                                                            <p className="text-xs font-bold text-primary tabular-nums">
+                                                                {grandQty} pcs
+                                                            </p>
+                                                            {hasPricing && (
+                                                                <p className="text-sm font-bold text-white tabular-nums">
+                                                                    MVR {grandAmount.toFixed(2)}
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     {/* Rows */}
                                                     <div className="divide-y divide-white/5">
                                                         {summaryRows.map(row => (
-                                                            <div key={row.name} className="px-4 py-3 flex items-start gap-3">
-                                                                <div className="min-w-[90px]">
-                                                                    <p className="text-xs font-semibold text-gray-300">{row.name}</p>
-                                                                    <p className="text-xs text-primary font-bold mt-0.5 tabular-nums">{row.catTotal} pcs</p>
+                                                            <div key={row.name} className="px-4 py-3">
+                                                                <div className="flex items-start justify-between gap-3 mb-2">
+                                                                    <div>
+                                                                        <p className="text-xs font-semibold text-gray-300">{row.name}</p>
+                                                                        {hasPricing && row.price > 0 && (
+                                                                            <p className="text-xs text-gray-500 mt-0.5">MVR {row.price.toFixed(2)} / pc</p>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="text-right shrink-0">
+                                                                        <p className="text-xs text-primary font-bold tabular-nums">{row.catQty} pcs</p>
+                                                                        {hasPricing && row.price > 0 && (
+                                                                            <p className="text-sm font-bold text-white tabular-nums">MVR {row.catAmount.toFixed(2)}</p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex flex-wrap gap-1.5 flex-1">
+                                                                {/* Size chips */}
+                                                                <div className="flex flex-wrap gap-1.5">
                                                                     {row.sizes.map((size: string) => (
                                                                         <span key={size} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-gray-200">
                                                                             <span className="font-semibold">{size}</span>
@@ -804,6 +827,13 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                             </div>
                                                         ))}
                                                     </div>
+                                                    {/* Grand total footer */}
+                                                    {hasPricing && (
+                                                        <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border-t border-primary/20">
+                                                            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Amount</p>
+                                                            <p className="text-base font-bold text-white tabular-nums">MVR {grandAmount.toFixed(2)}</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )
                                         })()}
