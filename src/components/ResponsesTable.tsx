@@ -124,10 +124,23 @@ export default function ResponsesTable({
 
       // ── Sheet 2: Size Orders (one row per respondent × category × size) ──────
       if (sizeTableFields.length > 0) {
-        const sizeHeaders = ['#', 'Submitted At', 'Field', 'Category', 'Size', 'Quantity', 'Unit Price', 'Total']
+        // Try to identify the 'Name' field to include in the order rows
+        const nameField = regularFields.find(f => 
+          f.label.toLowerCase().includes('name') || 
+          f.label.includes('ނަން') ||
+          (f.options as any)?.label_dv?.includes('ނަން')
+        ) || regularFields.find(f => f.type === 'short_text' || f.type === 'english_text' || f.type === 'dhivehi_text')
+
+        const sizeHeaders = ['#', 'Submitted At', 'Name', 'Field', 'Category', 'Size', 'Quantity', 'Unit Price', 'Total']
         const sizeRows: (string | number)[][] = []
 
         responses.forEach((r, idx) => {
+          let respondentName = '-'
+          if (nameField) {
+            const nameAns = r.form_answers.find(a => a.field_id === nameField.id)
+            if (nameAns && nameAns.value) respondentName = String(nameAns.value)
+          }
+
           sizeTableFields.forEach(f => {
             const ans = r.form_answers.find(a => a.field_id === f.id)
             const val = ans?.value as Record<string, Record<string, number>> | null | undefined
@@ -145,6 +158,7 @@ export default function ResponsesTable({
                   sizeRows.push([
                     idx + 1,
                     new Date(r.submitted_at).toLocaleString(),
+                    respondentName,
                     f.label,
                     cat.name,
                     size,
