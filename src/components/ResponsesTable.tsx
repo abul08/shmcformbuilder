@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Download, Search, Table as TableIcon, Filter, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useToast } from '@/components/ui/toast'
 import { getFileIcon, formatFileSize } from '@/lib/fileUpload'
 import { getSignedUrl } from '@/actions/files'
@@ -320,8 +320,8 @@ export default function ResponsesTable({
                 })
 
                 return (
-                  <>
-                    <tr key={response.id} className="hover:bg-white/5 transition-colors group">
+                  <Fragment key={response.id}>
+                    <tr className="hover:bg-white/5 transition-colors group">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="font-semibold text-white">
@@ -512,7 +512,7 @@ export default function ResponsesTable({
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 )
               })
             )}
