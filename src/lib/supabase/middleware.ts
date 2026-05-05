@@ -1,27 +1,39 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// ─── Security headers ─────────────────────────────────────────────────────────
-// Mirrors the values in next.config.js so SSR responses (which create a fresh
-// NextResponse) also carry the headers.  next.config.js covers static routes.
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+// ─── Per-request nonce-based CSP ──────────────────────────────────────────────
+// A fresh cryptographic nonce is generated for every request.
+// Next.js App Router reads `x-nonce` from the request headers and automatically
+// adds nonce="{nonce}" to every inline <script> it emits for hydration.
+// Combined with 'strict-dynamic', this removes the need for 'unsafe-inline'.
+function buildCSP(nonce: string): string {
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 
-const cspDirectives = [
-  `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline'`,
-  `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-  `font-src 'self' https://fonts.gstatic.com data:`,
-  `img-src 'self' data: blob: ${SUPABASE_URL}/storage/v1`,
-  `connect-src 'self' ${SUPABASE_URL} https://*.supabase.co wss://*.supabase.co`,
-  `frame-src 'none'`,
-  `object-src 'none'`,
-  `base-uri 'self'`,
-  `form-action 'self'`,
-  `upgrade-insecure-requests`,
-].join('; ')
+  const directives: string[] = [
+    `default-src 'self'`,
+    // nonce covers Next.js hydration scripts; strict-dynamic covers scripts
+    // they load. No 'unsafe-inline' needed on modern browsers.
+    `script-src 'nonce-${nonce}' 'strict-dynamic'`,
+    // Styles: 'unsafe-inline' is accepted for style-src (much lower risk than script)
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    `font-src 'self' https://fonts.gstatic.com data:`,
+    // blob: needed for PDF/file previews; data: for inline images
+    `img-src 'self' data: blob: ${SUPABASE_URL}/storage/v1`,
+    // Supabase REST + Realtime (HTTP and WebSocket)
+    `connect-src 'self' ${SUPABASE_URL} https://*.supabase.co wss://*.supabase.co`,
+    `frame-src 'none'`,
+    `object-src 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `upgrade-insecure-requests`,
+  ]
 
-function applySecurityHeaders(response: NextResponse): NextResponse {
-  response.headers.set('Content-Security-Policy', cspDirectives)
+  return directives.join('; ')
+}
+
+// ─── All other security headers (non-CSP) ────────────────────────────────────
+function applySecurityHeaders(response: NextResponse, csp: string): NextResponse {
+  response.headers.set('Content-Security-Policy', csp)
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin')
@@ -34,8 +46,18 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 }
 
 export async function updateSession(request: NextRequest) {
+  // 1. Generate a fresh nonce for this request
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  const csp = buildCSP(nonce)
+
+  // 2. Build modified request headers that carry the nonce.
+  //    Next.js reads 'x-nonce' and stamps it on all inline hydration <script> tags.
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-nonce', nonce)
+
+  // 3. Create the initial Supabase response using the nonce-carrying headers.
   let supabaseResponse = NextResponse.next({
-    request,
+    request: { headers: requestHeaders },
   })
 
   const supabase = createServerClient(
@@ -50,9 +72,10 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          // Re-create the response — MUST reuse requestHeaders so the nonce survives.
           supabaseResponse = NextResponse.next({
-            request,
+            request: { headers: requestHeaders },
           })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
@@ -62,14 +85,13 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // refreshing the auth token
+  // 4. Refresh the Supabase auth token
   try {
     await supabase.auth.getUser()
   } catch (e) {
-    // If there is a fetch error (e.g. network down), we can suppress it 
-    // so the page might still load if it doesn't strictly depend on auth (e.g. public forms)
     console.error('Middleware Supabase Auth Error:', e)
   }
 
-  return applySecurityHeaders(supabaseResponse)
+  // 5. Stamp all security headers (including nonce CSP) onto the response
+  return applySecurityHeaders(supabaseResponse, csp)
 }
