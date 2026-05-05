@@ -572,9 +572,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                         <p className="mt-2 text-sm text-gray-600">
                                                             <span className="font-semibold">Click to upload</span> or drag and drop
                                                         </p>
-                                                        <p className="text-xs text-gray-500 mt-1">
-                                                            PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (max {MAX_FILE_SIZE / 1024 / 1024}MB)
-                                                        </p>
+
                                                     </div>
                                                 )}
                                             </label>
@@ -676,11 +674,10 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                                         }))
                                                                     }
                                                                 }}
-                                                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                                                                    isSelected
-                                                                        ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
-                                                                        : 'bg-white/5 text-gray-400 border-white/15 hover:border-white/30 hover:text-gray-200'
-                                                                }`}
+                                                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${isSelected
+                                                                    ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
+                                                                    : 'bg-white/5 text-gray-400 border-white/15 hover:border-white/30 hover:text-gray-200'
+                                                                    }`}
                                                             >
                                                                 <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-gray-600'}`}></span>
                                                                 {cat.name}
@@ -744,11 +741,10 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                                                             }))
                                                                                         }
                                                                                     }}
-                                                                                    className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${
-                                                                                        isSizeSelected
-                                                                                            ? 'bg-primary/20 text-primary border-primary/50 shadow-sm'
-                                                                                            : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/25 hover:text-gray-300'
-                                                                                    }`}
+                                                                                    className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${isSizeSelected
+                                                                                        ? 'bg-primary/20 text-primary border-primary/50 shadow-sm'
+                                                                                        : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/25 hover:text-gray-300'
+                                                                                        }`}
                                                                                 >
                                                                                     {size}
                                                                                 </button>
