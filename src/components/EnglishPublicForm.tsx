@@ -696,42 +696,55 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
                                                                 {/* Quantity inputs — only for selected sizes */}
                                                                 {chosenSizes.length > 0 && (
-                                                                    <div className="rounded-lg overflow-hidden border border-white/10">
-                                                                        <div className="grid grid-cols-2 bg-white/10">
-                                                                            <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider">Size</div>
-                                                                            <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider text-center">Quantity</div>
-                                                                        </div>
-                                                                        {/* Preserve order from cat.sizes */}
-                                                                        {(cat.sizes || []).filter((s: string) => chosenSizes.includes(s)).map((size: string, sizeIdx: number) => {
-                                                                            const catAnswer = ((answers[field.id] as any)?.[cat.name]) || {}
-                                                                            return (
-                                                                                <div key={sizeIdx} className="grid grid-cols-2 border-t border-white/10 items-center">
-                                                                                    <div className="px-4 py-2.5 text-sm text-gray-300 font-semibold">{size}</div>
-                                                                                    <div className="px-3 py-2">
-                                                                                        <input
-                                                                                            type="number"
-                                                                                            min="0"
-                                                                                            autoFocus={sizeIdx === 0}
-                                                                                            value={catAnswer[size] ?? ''}
-                                                                                            onChange={(e) => {
-                                                                                                const val = e.target.value === '' ? undefined : parseInt(e.target.value, 10)
-                                                                                                const current = (answers[field.id] as any) || {}
-                                                                                                const currentCat = current[cat.name] || {}
-                                                                                                setAnswers(prev => ({
-                                                                                                    ...prev,
-                                                                                                    [field.id]: {
-                                                                                                        ...current,
-                                                                                                        [cat.name]: { ...currentCat, [size]: val }
-                                                                                                    }
-                                                                                                }))
-                                                                                            }}
-                                                                                            placeholder="0"
-                                                                                            className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-gray-300 text-center outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-600 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-                                                                                        />
+                                                                    <div className="space-y-2">
+                                                                        <div className="rounded-lg overflow-hidden border border-white/10">
+                                                                            <div className="grid grid-cols-2 bg-white/10">
+                                                                                <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider">Size</div>
+                                                                                <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider text-center">Quantity</div>
+                                                                            </div>
+                                                                            {/* Preserve order from cat.sizes */}
+                                                                            {(cat.sizes || []).filter((s: string) => chosenSizes.includes(s)).map((size: string, sizeIdx: number) => {
+                                                                                const catAnswer = ((answers[field.id] as any)?.[cat.name]) || {}
+                                                                                return (
+                                                                                    <div key={sizeIdx} className="grid grid-cols-2 border-t border-white/10 items-center">
+                                                                                        <div className="px-4 py-2.5 text-sm text-gray-300 font-semibold">{size}</div>
+                                                                                        <div className="px-3 py-2">
+                                                                                            <input
+                                                                                                type="number"
+                                                                                                min="0"
+                                                                                                autoFocus={sizeIdx === 0}
+                                                                                                value={catAnswer[size] ?? ''}
+                                                                                                onChange={(e) => {
+                                                                                                    const val = e.target.value === '' ? undefined : parseInt(e.target.value, 10)
+                                                                                                    const current = (answers[field.id] as any) || {}
+                                                                                                    const currentCat = current[cat.name] || {}
+                                                                                                    setAnswers(prev => ({
+                                                                                                        ...prev,
+                                                                                                        [field.id]: {
+                                                                                                            ...current,
+                                                                                                            [cat.name]: { ...currentCat, [size]: val }
+                                                                                                        }
+                                                                                                    }))
+                                                                                                }}
+                                                                                                placeholder="0"
+                                                                                                className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-gray-300 text-center outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-600 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                                                                                            />
+                                                                                        </div>
                                                                                     </div>
-                                                                                </div>
-                                                                            )
-                                                                        })}
+                                                                                )
+                                                                            })}
+                                                                            {/* Category subtotal */}
+                                                                            {(() => {
+                                                                                const catAnswer = ((answers[field.id] as any)?.[cat.name]) || {}
+                                                                                const subtotal = chosenSizes.reduce((sum, s) => sum + (Number(catAnswer[s]) || 0), 0)
+                                                                                return subtotal > 0 ? (
+                                                                                    <div className="grid grid-cols-2 border-t border-primary/20 bg-primary/5">
+                                                                                        <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider">Subtotal</div>
+                                                                                        <div className="px-4 py-2 text-sm font-bold text-primary text-center tabular-nums">{subtotal}</div>
+                                                                                    </div>
+                                                                                ) : null
+                                                                            })()}
+                                                                        </div>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -743,6 +756,57 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         {(!(field.options as any)?.categories || (field.options as any)?.categories?.length === 0) && (
                                             <div className="rounded-lg border border-white/10 px-4 py-6 text-center text-sm text-gray-600">No categories configured.</div>
                                         )}
+
+                                        {/* ── Consolidated Order Summary ──────────────────── */}
+                                        {(() => {
+                                            const cats: { name: string; sizes: string[] }[] = (field.options as any)?.categories || []
+                                            const fieldAnswer = (answers[field.id] as any) || {}
+                                            // Build rows only for filled quantities
+                                            const summaryRows = cats
+                                                .map(cat => {
+                                                    const catData = fieldAnswer[cat.name] || {}
+                                                    const sizes = (cat.sizes || []).filter((s: string) => Number(catData[s]) > 0)
+                                                    const catTotal = sizes.reduce((sum, s) => sum + Number(catData[s]), 0)
+                                                    return { name: cat.name, sizes, catData, catTotal }
+                                                })
+                                                .filter(row => row.catTotal > 0)
+
+                                            const grandTotal = summaryRows.reduce((sum, row) => sum + row.catTotal, 0)
+
+                                            if (summaryRows.length === 0) return null
+
+                                            return (
+                                                <div className="rounded-xl border border-primary/30 bg-primary/5 overflow-hidden">
+                                                    {/* Header */}
+                                                    <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border-b border-primary/20">
+                                                        <p className="text-xs font-bold uppercase tracking-wider text-primary">Order Summary</p>
+                                                        <span className="text-xs font-bold text-primary tabular-nums">
+                                                            Grand Total: {grandTotal}
+                                                        </span>
+                                                    </div>
+                                                    {/* Rows */}
+                                                    <div className="divide-y divide-white/5">
+                                                        {summaryRows.map(row => (
+                                                            <div key={row.name} className="px-4 py-3 flex items-start gap-3">
+                                                                <div className="min-w-[90px]">
+                                                                    <p className="text-xs font-semibold text-gray-300">{row.name}</p>
+                                                                    <p className="text-xs text-primary font-bold mt-0.5 tabular-nums">{row.catTotal} pcs</p>
+                                                                </div>
+                                                                <div className="flex flex-wrap gap-1.5 flex-1">
+                                                                    {row.sizes.map((size: string) => (
+                                                                        <span key={size} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-gray-200">
+                                                                            <span className="font-semibold">{size}</span>
+                                                                            <span className="text-gray-400">×</span>
+                                                                            <span className="font-bold text-white tabular-nums">{row.catData[size]}</span>
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
 
                                         {/* Note below */}
                                         {(field.options as any)?.note && (
