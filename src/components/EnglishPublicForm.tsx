@@ -67,19 +67,27 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
             if (field.type === 'size_table') {
                 const cats: { name: string; sizes: string[] }[] = (field.options as any)?.categories || []
                 const fieldAnswer = (answer as Record<string, Record<string, number>>) || {}
+                const fieldSelectedCategories = selectedCategories[field.id] || []
 
-                // Rule 1: if required, at least one qty > 0 must exist across all categories
-                if (field.required) {
-                    const hasAnyQty = cats.some(cat =>
-                        (cat.sizes || []).some(s => Number((fieldAnswer[cat.name] || {})[s]) > 0)
-                    )
-                    if (!hasAnyQty) {
-                        addToast(`Please enter at least one quantity for: ${field.label}`, 'error')
-                        hasError = true
+                // Rule 1: Must select at least one category
+                if (fieldSelectedCategories.length === 0) {
+                    addToast(`Please select at least one category for: ${field.label}`, 'error')
+                    hasError = true
+                } else {
+                    // Rule 2: If a category is selected, it must have at least one quantity > 0
+                    for (const catName of fieldSelectedCategories) {
+                        const cat = cats.find(c => c.name === catName)
+                        if (cat) {
+                            const hasQty = cat.sizes.some(s => Number((fieldAnswer[catName] || {})[s]) > 0)
+                            if (!hasQty) {
+                                addToast(`Please enter at least one quantity for category: ${catName}`, 'error')
+                                hasError = true
+                            }
+                        }
                     }
                 }
 
-                // Rule 2: every selected size must have a quantity > 0
+                // Rule 3: every selected size must have a quantity > 0
                 const fieldSelectedSizes = selectedSizes[field.id] || {}
                 for (const cat of cats) {
                     const chosenSizes: string[] = fieldSelectedSizes[cat.name] || []
