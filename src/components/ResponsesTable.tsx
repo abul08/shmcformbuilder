@@ -70,7 +70,7 @@ export default function ResponsesTable({
   }
 
   const sortedFields = [...fields]
-    .filter(f => !['section_header', 'text_block', 'image', 'size_table'].includes(f.type))
+    .filter(f => !['section_header', 'text_block', 'image', 'size_table', 'bank_account'].includes(f.type))
     .sort((a, b) => a.order_index - b.order_index)
 
   const sizeTableFields = [...fields]
@@ -88,7 +88,7 @@ export default function ResponsesTable({
     try {
       const allFields = [...fields].sort((a, b) => a.order_index - b.order_index)
       const regularFields = allFields.filter(
-        f => !['section_header', 'text_block', 'image', 'layout', 'size_table'].includes(f.type)
+        f => !['section_header', 'text_block', 'image', 'layout', 'size_table', 'bank_account'].includes(f.type)
       )
       const sizeTableFields = allFields.filter(f => f.type === 'size_table')
 

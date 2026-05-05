@@ -222,6 +222,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                     <option value="text_block">ލިޔުންކޮޅެއް</option>
                                     <option value="section_header">ބައި (ސެކްޝަން)</option>
                                     <option value="consent">އިޤްރާރު</option>
+                                    <option value="bank_account">ބޭންކް އެކައުންޓް</option>
                                 </select>
                             </div>
                         </div>
@@ -429,8 +430,38 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                             </div>
                         )}
 
+                        {/* Bank Account Specific Controls */}
+                        {field.type === 'bank_account' && (
+                            <div className="col-span-full space-y-4 rounded-lg bg-black/20 p-4 border border-white/5">
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label className="block text-sm text-gray-400 mb-1 text-right font-faruma">އެކައުންޓްގެ ނަން</label>
+                                        <input
+                                            type="text"
+                                            dir="rtl"
+                                            value={(field.options as any)?.accountName || ''}
+                                            onChange={(e) => onUpdate(field.id, { options: { ...(field.options as any || {}), accountName: e.target.value } })}
+                                            placeholder="އެކައުންޓްގެ ނަން..."
+                                            className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white text-right font-faruma outline-1 -outline-offset-1 outline-white/10 focus:outline-primary"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-gray-400 mb-1 text-right font-faruma">އެކައުންޓް ނަންބަރު</label>
+                                        <input
+                                            type="text"
+                                            dir="ltr"
+                                            value={(field.options as any)?.accountNumber || ''}
+                                            onChange={(e) => onUpdate(field.id, { options: { ...(field.options as any || {}), accountNumber: e.target.value } })}
+                                            placeholder="7730000000001"
+                                            className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white text-right font-mono outline-1 -outline-offset-1 outline-white/10 focus:outline-primary"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Required Toggle */}
-                        {field.type !== 'image' && field.type !== 'text_block' && field.type !== 'section_header' && (
+                        {field.type !== 'image' && field.type !== 'text_block' && field.type !== 'section_header' && field.type !== 'bank_account' && (
                             <div className="col-span-full">
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-6 shrink-0 items-center">

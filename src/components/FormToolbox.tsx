@@ -78,6 +78,7 @@ export default function FormToolbox({ onAddField, variant = 'default', className
                 { type: 'file', label: 'File Upload', icon: Upload, description: 'Allow file attachments' },
                 { type: 'image', label: 'Image', icon: ImageIcon, description: 'Embed an image' },
                 { type: 'size_table', label: 'Size Table', icon: Hash, description: 'Size/quantity table for orders' },
+                { type: 'bank_account', label: 'Bank Account', icon: List, description: 'Display a bank account to copy' },
                 { type: 'section_header', label: 'Section Header', icon: Type, description: 'Add a section break' },
                 { type: 'text_block', label: 'Text Block', icon: Pilcrow, description: 'Static text and heading' },
                 { type: 'consent', label: 'Consent', icon: CheckSquare, description: 'Terms agreement checkbox' },

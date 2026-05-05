@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Form, FormField } from '@/types'
 import { submitResponse } from '@/actions/responses'
-import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2 } from 'lucide-react'
+import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Copy } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, getFileIcon, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
@@ -58,7 +58,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
         for (const field of fields) {
             // Skip non-input fields
-            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header') continue
+            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header' || field.type === 'bank_account') continue
 
             const answer = answers[field.id]
             const file = uploadedFiles[field.id]
@@ -289,8 +289,8 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                         : (field.options as any)?.items || []
 
                     return (
-                        <div key={field.id}>
-                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && field.type !== 'section_header' && field.type !== 'size_table' && (
+                        <div key={field.id} id={`field-${field.id}`} className="scroll-mt-24">
+                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && field.type !== 'section_header' && field.type !== 'size_table' && field.type !== 'bank_account' && (
                                 field.type === 'dhivehi_text' ? (
                                     <label htmlFor={field.id} className="block text-xl font-waheed text-gray-400 text-right" dir="rtl">
                                         {field.label}
@@ -603,6 +603,37 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                 {(field.options as any).content}
                                             </p>
                                         )}
+                                    </div>
+                                )}
+
+                                {field.type === 'bank_account' && (
+                                    <div className="rounded-lg bg-black/20 border border-white/10 p-5">
+                                        <h3 className="text-lg font-medium text-white mb-4">{field.label || 'Bank Account Details'}</h3>
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center bg-white/5 rounded-md px-4 py-3">
+                                                <span className="text-sm text-gray-400">Account Name</span>
+                                                <span className="text-sm font-semibold text-gray-200">{(field.options as any)?.accountName || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center bg-white/5 rounded-md px-4 py-3">
+                                                <span className="text-sm text-gray-400">Account Number</span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-lg font-mono font-bold text-primary">{(field.options as any)?.accountNumber || 'N/A'}</span>
+                                                    {(field.options as any)?.accountNumber && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText((field.options as any).accountNumber)
+                                                                addToast('Account number copied to clipboard', 'success')
+                                                            }}
+                                                            className="text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-md transition-colors"
+                                                            title="Copy account number"
+                                                        >
+                                                            <Copy className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 

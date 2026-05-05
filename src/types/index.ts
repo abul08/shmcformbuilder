@@ -24,6 +24,7 @@ export type FormFieldType =
   | 'dhivehi_text'
   | 'section_header'
   | 'size_table'
+  | 'bank_account'
 
 export interface Form {
   id: string

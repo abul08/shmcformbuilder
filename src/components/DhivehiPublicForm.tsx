@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Form, FormField } from '@/types'
 import { submitResponse } from '@/actions/responses'
-import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Calendar } from 'lucide-react'
+import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Calendar, Copy } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, getFileIcon, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
@@ -53,7 +53,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
         for (const field of fields) {
             // Skip non-input fields
-            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header') continue
+            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header' || field.type === 'bank_account') continue
 
             const answer = answers[field.id]
             const file = uploadedFiles[field.id]
@@ -263,12 +263,12 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                         ? field.options // legacy
                         : (options.items_dv && options.items_dv.length > 0 ? options.items_dv : (options.items || []))
 
-                    // Fallback if dv label missing (shouldn't happen if user used builder mostly)
                     if (!label) label = field.label
 
                     return (
-                        <div key={field.id}>
-                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && field.type !== 'section_header' && (
+                        <div key={field.id} id={`field-${field.id}`} className="scroll-mt-24">
+                            {/* Question Label */}
+                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && field.type !== 'section_header' && field.type !== 'bank_account' && (
                                 field.type === 'english_text' ? (
                                     <label htmlFor={field.id} className="block sm:text-lg text-md font-medium tracking-normal text-gray-400 text-left font-sans " dir="ltr">
                                         {label}
@@ -591,6 +591,37 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
                                                 {content}
                                             </p>
                                         )}
+                                    </div>
+                                )}
+
+                                {field.type === 'bank_account' && (
+                                    <div className="rounded-lg bg-black/20 border border-white/10 p-5 mt-6 mb-4" dir="rtl">
+                                        <h3 className="text-xl font-waheed text-white mb-4 text-right">{label || 'ބޭންކް އެކައުންޓް'}</h3>
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center bg-white/5 rounded-md px-4 py-3">
+                                                <span className="text-sm text-gray-400 font-faruma">އެކައުންޓްގެ ނަން</span>
+                                                <span className="text-sm font-semibold text-gray-200 font-faruma">{(field.options as any)?.accountName || '-'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center bg-white/5 rounded-md px-4 py-3">
+                                                <span className="text-sm text-gray-400 font-faruma">އެކައުންޓް ނަންބަރު</span>
+                                                <div className="flex items-center gap-3" dir="ltr">
+                                                    <span className="text-lg font-mono font-bold text-primary">{(field.options as any)?.accountNumber || '-'}</span>
+                                                    {(field.options as any)?.accountNumber && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText((field.options as any).accountNumber)
+                                                                addToast('އެކައުންޓް ނަންބަރު ކޮޕީ ކުރެވިއްޖެ', 'success', 'font-waheed')
+                                                            }}
+                                                            className="text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-md transition-colors"
+                                                            title="ކޮޕީ ކުރޭ"
+                                                        >
+                                                            <Copy className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
