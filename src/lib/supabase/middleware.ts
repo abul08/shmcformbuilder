@@ -17,8 +17,10 @@ function buildCSP(nonce: string): string {
     // Styles: 'unsafe-inline' is accepted for style-src (much lower risk than script)
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `font-src 'self' https://fonts.gstatic.com data:`,
-    // blob: needed for PDF/file previews; data: for inline images
-    `img-src 'self' data: blob: ${SUPABASE_URL}/storage/v1`,
+    // blob: for file previews; data: for inline images; *.supabase.co covers
+    // Supabase Storage public URLs and CDN; https: allows any admin-configured
+    // external image URL (images cannot execute code, so https: is safe here)
+    `img-src 'self' data: blob: https://*.supabase.co https:`,
     // Supabase REST + Realtime (HTTP and WebSocket)
     `connect-src 'self' ${SUPABASE_URL} https://*.supabase.co wss://*.supabase.co`,
     `frame-src 'none'`,
