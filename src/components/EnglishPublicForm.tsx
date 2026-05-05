@@ -58,10 +58,42 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
         for (const field of fields) {
             // Skip non-input fields
-            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header' || field.type === 'size_table') continue
+            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header') continue
 
             const answer = answers[field.id]
             const file = uploadedFiles[field.id]
+
+            // ── size_table validation ──────────────────────────────────────────
+            if (field.type === 'size_table') {
+                const cats: { name: string; sizes: string[] }[] = (field.options as any)?.categories || []
+                const fieldAnswer = (answer as Record<string, Record<string, number>>) || {}
+
+                // Rule 1: if required, at least one qty > 0 must exist across all categories
+                if (field.required) {
+                    const hasAnyQty = cats.some(cat =>
+                        (cat.sizes || []).some(s => Number((fieldAnswer[cat.name] || {})[s]) > 0)
+                    )
+                    if (!hasAnyQty) {
+                        addToast(`Please enter at least one quantity for: ${field.label}`, 'error')
+                        hasError = true
+                    }
+                }
+
+                // Rule 2: every selected size must have a quantity > 0
+                const fieldSelectedSizes = selectedSizes[field.id] || {}
+                for (const cat of cats) {
+                    const chosenSizes: string[] = fieldSelectedSizes[cat.name] || []
+                    for (const size of chosenSizes) {
+                        const qty = Number((fieldAnswer[cat.name] || {})[size])
+                        if (!qty || qty <= 0) {
+                            addToast(`Please enter a quantity for ${cat.name} — ${size}`, 'error')
+                            hasError = true
+                        }
+                    }
+                }
+
+                continue
+            }
 
             // Check Required
             if (field.required) {
