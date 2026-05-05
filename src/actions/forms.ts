@@ -1,9 +1,11 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { Form } from '@/types'
+import { getTemplateById } from '@/lib/formTemplates'
 
 export async function createForm(formData: FormData) {
   const supabase = await createClient()
@@ -129,3 +131,73 @@ export async function duplicateForm(id: string) {
 
   revalidatePath('/dashboard')
 }
+
+export async function createFormFromTemplate(templateId: string, language: 'en' | 'dv' = 'en') {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error('Unauthorized')
+  }
+
+  // Check if user is Super User to pick the right client for field inserts
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const isSuperUser = profile?.role === 'SUPER_USER'
+  const client = isSuperUser ? await createAdminClient() : supabase
+
+  const template = getTemplateById(templateId)
+  if (!template) {
+    return { error: 'Template not found' }
+  }
+
+  const slug = Math.random().toString(36).substring(2, 10)
+
+  // 1. Create the form
+  const { data: newForm, error: formError } = await supabase
+    .from('forms')
+    .insert({
+      user_id: user.id,
+      title: template.formDefaults.title,
+      description: template.formDefaults.description,
+      slug,
+      is_published: false,
+      settings: { language },
+    })
+    .select()
+    .single()
+
+  if (formError) {
+    return { error: formError.message }
+  }
+
+  // 2. Bulk-insert all template fields
+  if (template.fields.length > 0) {
+    const fieldsToInsert = template.fields.map((f) => ({
+      form_id: newForm.id,
+      type: f.type,
+      label: f.label,
+      placeholder: f.placeholder,
+      required: f.required,
+      options: f.options,
+      order_index: f.order_index,
+    }))
+
+    const { error: fieldsError } = await client
+      .from('form_fields')
+      .insert(fieldsToInsert)
+
+    if (fieldsError) {
+      // Roll back the form if field insert fails
+      await supabase.from('forms').delete().eq('id', newForm.id)
+      return { error: fieldsError.message }
+    }
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true, id: newForm.id }
+}
+

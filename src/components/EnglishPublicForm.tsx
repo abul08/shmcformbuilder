@@ -22,6 +22,10 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSubmitted, setIsSubmitted] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    // Tracks which categories the respondent has opted into per size_table field
+    const [selectedCategories, setSelectedCategories] = useState<Record<string, string[]>>({})
+    // Tracks which sizes the respondent has selected per field per category
+    const [selectedSizes, setSelectedSizes] = useState<Record<string, Record<string, string[]>>>({})
     const { confirm, dialog } = useConfirmDialog()
     const { addToast } = useToast()
 
@@ -54,7 +58,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
         for (const field of fields) {
             // Skip non-input fields
-            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header') continue
+            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header' || field.type === 'size_table') continue
 
             const answer = answers[field.id]
             const file = uploadedFiles[field.id]
@@ -254,7 +258,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
                     return (
                         <div key={field.id}>
-                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && field.type !== 'section_header' && (
+                            {field.type !== 'text_block' && field.type !== 'image' && field.type !== 'consent' && field.type !== 'section_header' && field.type !== 'size_table' && (
                                 field.type === 'dhivehi_text' ? (
                                     <label htmlFor={field.id} className="block text-xl font-waheed text-gray-400 text-right" dir="rtl">
                                         {field.label}
@@ -565,6 +569,185 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                         {(field.options as any)?.content && (
                                             <p className="mt-1 text-base text-gray-400 whitespace-pre-wrap leading-relaxed">
                                                 {(field.options as any).content}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {field.type === 'size_table' && (
+                                    <div className="space-y-5">
+                                        {/* Field label */}
+                                        <label className="block text-lg font-medium text-gray-400">
+                                            {field.label}
+                                        </label>
+
+                                        {/* Step 1 — Category selection */}
+                                        {((field.options as any)?.categories || []).length > 0 && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-gray-500">Select the categories you want to order:</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {((field.options as any)?.categories || []).map((cat: { name: string, sizes: string[] }) => {
+                                                        const isSelected = (selectedCategories[field.id] || []).includes(cat.name)
+                                                        return (
+                                                            <button
+                                                                key={cat.name}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const current = selectedCategories[field.id] || []
+                                                                    if (isSelected) {
+                                                                        // Deselect — remove category and clear its answers
+                                                                        setSelectedCategories(prev => ({
+                                                                            ...prev,
+                                                                            [field.id]: current.filter(n => n !== cat.name)
+                                                                        }))
+                                                                        setAnswers(prev => {
+                                                                            const fieldAnswer = { ...(prev[field.id] as any || {}) }
+                                                                            delete fieldAnswer[cat.name]
+                                                                            return { ...prev, [field.id]: fieldAnswer }
+                                                                        })
+                                                                    } else {
+                                                                        // Select
+                                                                        setSelectedCategories(prev => ({
+                                                                            ...prev,
+                                                                            [field.id]: [...current, cat.name]
+                                                                        }))
+                                                                    }
+                                                                }}
+                                                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                                                                    isSelected
+                                                                        ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
+                                                                        : 'bg-white/5 text-gray-400 border-white/15 hover:border-white/30 hover:text-gray-200'
+                                                                }`}
+                                                            >
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-gray-600'}`}></span>
+                                                                {cat.name}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Step 2 — Per-category: select sizes then enter quantity */}
+                                        {(selectedCategories[field.id] || []).length > 0 && (
+                                            <div className="space-y-6">
+                                                {((field.options as any)?.categories || [])
+                                                    .filter((cat: { name: string, sizes: string[] }) =>
+                                                        (selectedCategories[field.id] || []).includes(cat.name)
+                                                    )
+                                                    .map((cat: { name: string, sizes: string[] }, catIdx: number) => {
+                                                        const chosenSizes: string[] = selectedSizes[field.id]?.[cat.name] || []
+                                                        return (
+                                                            <div key={catIdx} className="space-y-3">
+                                                                {/* Category heading */}
+                                                                <p className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                                                                    <span className="inline-block w-2 h-2 rounded-full bg-primary/60"></span>
+                                                                    {cat.name}
+                                                                </p>
+
+                                                                {/* Size chips — pick which sizes */}
+                                                                <div>
+                                                                    <p className="text-xs text-gray-500 mb-2">Select sizes:</p>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {(cat.sizes || []).map((size: string) => {
+                                                                            const isSizeSelected = chosenSizes.includes(size)
+                                                                            return (
+                                                                                <button
+                                                                                    key={size}
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        if (isSizeSelected) {
+                                                                                            // Deselect size — remove from selection and clear its qty
+                                                                                            setSelectedSizes(prev => ({
+                                                                                                ...prev,
+                                                                                                [field.id]: {
+                                                                                                    ...(prev[field.id] || {}),
+                                                                                                    [cat.name]: chosenSizes.filter(s => s !== size)
+                                                                                                }
+                                                                                            }))
+                                                                                            setAnswers(prev => {
+                                                                                                const fieldAns = { ...(prev[field.id] as any || {}) }
+                                                                                                const catAns = { ...(fieldAns[cat.name] || {}) }
+                                                                                                delete catAns[size]
+                                                                                                return { ...prev, [field.id]: { ...fieldAns, [cat.name]: catAns } }
+                                                                                            })
+                                                                                        } else {
+                                                                                            setSelectedSizes(prev => ({
+                                                                                                ...prev,
+                                                                                                [field.id]: {
+                                                                                                    ...(prev[field.id] || {}),
+                                                                                                    [cat.name]: [...chosenSizes, size]
+                                                                                                }
+                                                                                            }))
+                                                                                        }
+                                                                                    }}
+                                                                                    className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${
+                                                                                        isSizeSelected
+                                                                                            ? 'bg-primary/20 text-primary border-primary/50 shadow-sm'
+                                                                                            : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/25 hover:text-gray-300'
+                                                                                    }`}
+                                                                                >
+                                                                                    {size}
+                                                                                </button>
+                                                                            )
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Quantity inputs — only for selected sizes */}
+                                                                {chosenSizes.length > 0 && (
+                                                                    <div className="rounded-lg overflow-hidden border border-white/10">
+                                                                        <div className="grid grid-cols-2 bg-white/10">
+                                                                            <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider">Size</div>
+                                                                            <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider text-center">Quantity</div>
+                                                                        </div>
+                                                                        {/* Preserve order from cat.sizes */}
+                                                                        {(cat.sizes || []).filter((s: string) => chosenSizes.includes(s)).map((size: string, sizeIdx: number) => {
+                                                                            const catAnswer = ((answers[field.id] as any)?.[cat.name]) || {}
+                                                                            return (
+                                                                                <div key={sizeIdx} className="grid grid-cols-2 border-t border-white/10 items-center">
+                                                                                    <div className="px-4 py-2.5 text-sm text-gray-300 font-semibold">{size}</div>
+                                                                                    <div className="px-3 py-2">
+                                                                                        <input
+                                                                                            type="number"
+                                                                                            min="0"
+                                                                                            autoFocus={sizeIdx === 0}
+                                                                                            value={catAnswer[size] ?? ''}
+                                                                                            onChange={(e) => {
+                                                                                                const val = e.target.value === '' ? undefined : parseInt(e.target.value, 10)
+                                                                                                const current = (answers[field.id] as any) || {}
+                                                                                                const currentCat = current[cat.name] || {}
+                                                                                                setAnswers(prev => ({
+                                                                                                    ...prev,
+                                                                                                    [field.id]: {
+                                                                                                        ...current,
+                                                                                                        [cat.name]: { ...currentCat, [size]: val }
+                                                                                                    }
+                                                                                                }))
+                                                                                            }}
+                                                                                            placeholder="0"
+                                                                                            className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-gray-300 text-center outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-600 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                                                                                        />
+                                                                                    </div>
+                                                                                </div>
+                                                                            )
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    })}
+                                            </div>
+                                        )}
+
+                                        {(!(field.options as any)?.categories || (field.options as any)?.categories?.length === 0) && (
+                                            <div className="rounded-lg border border-white/10 px-4 py-6 text-center text-sm text-gray-600">No categories configured.</div>
+                                        )}
+
+                                        {/* Note below */}
+                                        {(field.options as any)?.note && (
+                                            <p className="text-xs text-gray-500 leading-relaxed">
+                                                {(field.options as any).note}
                                             </p>
                                         )}
                                     </div>

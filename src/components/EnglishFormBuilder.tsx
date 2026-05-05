@@ -48,6 +48,48 @@ interface SortableFieldProps {
     onDelete: (id: string) => void
 }
 
+// Helper: inline chip-style input for adding a new size to a category
+function AddSizeInput({ onAdd }: { onAdd: (size: string) => void }) {
+    const [open, setOpen] = useState(false)
+    const [val, setVal] = useState('')
+
+    const commit = () => {
+        const trimmed = val.trim()
+        if (trimmed) { onAdd(trimmed); setVal(''); setOpen(false) }
+    }
+
+    if (!open) {
+        return (
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="inline-flex items-center gap-1 text-xs text-primary/60 hover:text-primary border border-dashed border-primary/30 hover:border-primary/60 px-2 py-1 rounded-md transition-colors"
+            >
+                <Plus className="h-3 w-3" /> Add Size
+            </button>
+        )
+    }
+
+    return (
+        <span className="inline-flex items-center gap-1">
+            <input
+                type="text"
+                autoFocus
+                value={val}
+                onChange={(e) => setVal(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); commit() }
+                    if (e.key === 'Escape') { setOpen(false); setVal('') }
+                }}
+                placeholder="e.g. XL"
+                className="w-16 text-xs rounded border border-primary/50 bg-white/5 px-2 py-1 text-white outline-none"
+            />
+            <button type="button" onClick={commit} className="text-xs text-primary hover:text-primary/80 font-semibold">✓</button>
+            <button type="button" onClick={() => { setOpen(false); setVal('') }} className="text-xs text-gray-500 hover:text-gray-300">✕</button>
+        </span>
+    )
+}
+
 function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
     const {
         attributes,
@@ -140,7 +182,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         {/* Label Editor */}
                         <div className="sm:col-span-4">
                             <label htmlFor={`label-${field.id}`} className="block text-sm/6 font-medium text-white">
-                                {field.type === 'image' ? 'Image Title / Label' : field.type === 'text_block' ? 'Heading Text' : field.type === 'consent' ? 'Heading' : field.type === 'section_header' ? 'Section Title' : 'Question'}
+                                {field.type === 'image' ? 'Image Title / Label' : field.type === 'text_block' ? 'Heading Text' : field.type === 'consent' ? 'Heading' : field.type === 'section_header' ? 'Section Title' : field.type === 'size_table' ? 'Field Label' : 'Question'}
                             </label>
                             <div className="mt-2">
                                 <input
@@ -184,6 +226,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                     <option value="dropdown">Dropdown</option>
                                     <option value="file">File Upload</option>
                                     <option value="image">Image Embed</option>
+                                    <option value="size_table">Size Table</option>
                                     <option value="text_block">Text Block</option>
                                     <option value="consent">Consent / Terms</option>
                                     <option value="section_header">Section Header</option>
@@ -255,6 +298,119 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                         )}
                                         {isUploading ? 'Uploading...' : 'Upload Image (PNG/JPG)'}
                                     </label>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Size Table Specific Controls */}
+                        {field.type === 'size_table' && (
+                            <div className="col-span-full space-y-4 rounded-lg bg-black/20 p-4 border border-white/5">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm font-medium text-gray-400">Categories &amp; Sizes</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const cats = (field.options as any)?.categories || []
+                                            onUpdate(field.id, {
+                                                options: {
+                                                    ...(field.options as any || {}),
+                                                    categories: [...cats, { name: 'New Category', sizes: [] }]
+                                                }
+                                            })
+                                        }}
+                                        className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-2.5 py-1.5 rounded-md transition-colors"
+                                    >
+                                        <Plus className="h-3.5 w-3.5" /> Add Category
+                                    </button>
+                                </div>
+
+                                {/* Category cards */}
+                                <div className="space-y-3">
+                                    {((field.options as any)?.categories || []).map((cat: { name: string, sizes: string[] }, catIdx: number) => (
+                                        <div key={catIdx} className="rounded-lg border border-white/10 bg-white/5 overflow-hidden">
+                                            {/* Category header row */}
+                                            <div className="flex items-center gap-2 px-3 py-2 border-b border-white/10 bg-white/[0.04]">
+                                                <input
+                                                    type="text"
+                                                    value={cat.name}
+                                                    onChange={(e) => {
+                                                        const cats = [...((field.options as any)?.categories || [])]
+                                                        cats[catIdx] = { ...cats[catIdx], name: e.target.value }
+                                                        onUpdate(field.id, { options: { ...(field.options as any || {}), categories: cats } })
+                                                    }}
+                                                    placeholder="Category name"
+                                                    className="flex-1 bg-transparent text-sm font-semibold text-white outline-none border-b border-transparent focus:border-primary/50 pb-0.5"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const cats = ((field.options as any)?.categories || []).filter((_: any, i: number) => i !== catIdx)
+                                                        onUpdate(field.id, { options: { ...(field.options as any || {}), categories: cats } })
+                                                    }}
+                                                    className="shrink-0 text-gray-600 hover:text-red-400 transition-colors p-0.5"
+                                                    title="Remove category"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            </div>
+
+                                            {/* Size chips */}
+                                            <div className="px-3 py-3 flex flex-wrap gap-1.5">
+                                                {(cat.sizes || []).map((size: string, sizeIdx: number) => (
+                                                    <span
+                                                        key={sizeIdx}
+                                                        className="inline-flex items-center gap-1 text-xs bg-white/10 text-gray-300 border border-white/10 px-2 py-1 rounded-md font-medium"
+                                                    >
+                                                        {size}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const cats = [...((field.options as any)?.categories || [])]
+                                                                cats[catIdx] = {
+                                                                    ...cats[catIdx],
+                                                                    sizes: cats[catIdx].sizes.filter((_: string, i: number) => i !== sizeIdx)
+                                                                }
+                                                                onUpdate(field.id, { options: { ...(field.options as any || {}), categories: cats } })
+                                                            }}
+                                                            className="text-gray-500 hover:text-red-400 transition-colors ml-0.5"
+                                                        >
+                                                            <X className="h-2.5 w-2.5" />
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                                <AddSizeInput
+                                                    onAdd={(size) => {
+                                                        const cats = [...((field.options as any)?.categories || [])]
+                                                        cats[catIdx] = {
+                                                            ...cats[catIdx],
+                                                            sizes: [...(cats[catIdx].sizes || []), size]
+                                                        }
+                                                        onUpdate(field.id, { options: { ...(field.options as any || {}), categories: cats } })
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {(!(field.options as any)?.categories || (field.options as any)?.categories?.length === 0) && (
+                                        <div className="rounded-lg border border-dashed border-white/10 px-4 py-6 text-center text-sm text-gray-600">
+                                            No categories yet. Click "Add Category" to get started.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Note Field */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Note (shown below table)</label>
+                                    <textarea
+                                        rows={2}
+                                        value={(field.options as any)?.note || ''}
+                                        onChange={(e) => onUpdate(field.id, {
+                                            options: { ...(field.options as any || {}), note: e.target.value }
+                                        })}
+                                        placeholder="Optional note displayed below the size table..."
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 focus:outline-primary placeholder:text-gray-500"
+                                    />
                                 </div>
                             </div>
                         )}
@@ -374,7 +530,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         )}
 
                         {/* Required Toggle */}
-                        {field.type !== 'image' && field.type !== 'text_block' && field.type !== 'section_header' && (
+                        {field.type !== 'image' && field.type !== 'text_block' && field.type !== 'section_header' && field.type !== 'size_table' && (
                             <div className="col-span-full">
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-6 shrink-0 items-center">

@@ -7,6 +7,7 @@ import { createForm } from '@/actions/forms'
 import { logout } from '@/actions/auth'
 import FormList from '@/components/FormList'
 import CreateFormButton from '@/components/CreateFormButton'
+import TemplatePickerButton from '@/components/TemplatePickerButton'
 import { Input } from '@/components/ui/input'
 
 export default async function DashboardPage() {
@@ -94,7 +95,8 @@ export default async function DashboardPage() {
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-300">Your Forms</h1>
               <p className="text-gray-600 mt-1">Create, manage and share your forms.</p>
             </div>
-            <div className="w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <TemplatePickerButton />
               <CreateFormButton />
             </div>
           </div>

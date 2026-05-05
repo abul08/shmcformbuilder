@@ -23,6 +23,7 @@ export type FormFieldType =
   | 'english_text'
   | 'dhivehi_text'
   | 'section_header'
+  | 'size_table'
 
 export interface Form {
   id: string
