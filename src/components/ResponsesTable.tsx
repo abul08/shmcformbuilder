@@ -124,7 +124,7 @@ export default function ResponsesTable({
 
       // ── Sheet 2: Size Orders (one row per respondent × category × size) ──────
       if (sizeTableFields.length > 0) {
-        const sizeHeaders = ['#', 'Submitted At', 'Field', 'Category', 'Size', 'Quantity']
+        const sizeHeaders = ['#', 'Submitted At', 'Field', 'Category', 'Size', 'Quantity', 'Unit Price', 'Total']
         const sizeRows: (string | number)[][] = []
 
         responses.forEach((r, idx) => {
@@ -133,14 +133,15 @@ export default function ResponsesTable({
             const val = ans?.value as Record<string, Record<string, number>> | null | undefined
             if (!val || typeof val !== 'object') return
 
-            const cats: { name: string; sizes: string[] }[] = (f.options as any)?.categories || []
+            const cats: { name: string; sizes: string[]; price?: number }[] = (f.options as any)?.categories || []
             // Iterate in defined order
             cats.forEach(cat => {
               const catData = val[cat.name]
               if (!catData) return
+              const price = Number((cat as any).price) || 0
               cat.sizes.forEach(size => {
                 const qty = catData[size]
-                if (qty !== undefined && qty !== null && qty !== ('' as any)) {
+                if (qty !== undefined && qty !== null && qty !== ('' as any) && Number(qty) > 0) {
                   sizeRows.push([
                     idx + 1,
                     new Date(r.submitted_at).toLocaleString(),
@@ -148,6 +149,8 @@ export default function ResponsesTable({
                     cat.name,
                     size,
                     Number(qty),
+                    price > 0 ? price : '',
+                    price > 0 ? Number(qty) * price : ''
                   ])
                 }
               })
