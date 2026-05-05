@@ -420,7 +420,9 @@ export default function ResponsesTable({
                               const val = ans?.value as Record<string, Record<string, number>> | null | undefined
                               if (!val || typeof val !== 'object') return null
 
-                              const cats: { name: string; sizes: string[] }[] = (f.options as any)?.categories || []
+                              const cats: { name: string; sizes: string[]; price?: number }[] = (f.options as any)?.categories || []
+                              const hasPricing = cats.some(c => Number((c as any).price) > 0)
+
                               const filledCats = cats.filter(cat => {
                                 const catData = val[cat.name]
                                 if (!catData) return false
@@ -429,38 +431,80 @@ export default function ResponsesTable({
 
                               if (!filledCats.length) return null
 
+                              const grandQty = filledCats.reduce((sum, cat) => {
+                                const catData = val[cat.name] || {}
+                                return sum + cat.sizes.filter(s => Number(catData[s]) > 0).reduce((s2, sz) => s2 + Number(catData[sz] || 0), 0)
+                              }, 0)
+                              const grandAmount = filledCats.reduce((sum, cat) => {
+                                const catData = val[cat.name] || {}
+                                const price = Number((cat as any).price) || 0
+                                const qty = cat.sizes.filter(s => Number(catData[s]) > 0).reduce((s2, sz) => s2 + Number(catData[sz] || 0), 0)
+                                return sum + qty * price
+                              }, 0)
+
                               return (
                                 <div key={f.id}>
                                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">{f.label}</p>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                     {filledCats.map(cat => {
                                       const catData = val[cat.name] || {}
+                                      const price = Number((cat as any).price) || 0
                                       const filledSizes = cat.sizes.filter(
                                         s => catData[s] !== undefined && Number(catData[s]) > 0
                                       )
+                                      const catQty = filledSizes.reduce((sum, s) => sum + Number(catData[s] || 0), 0)
+                                      const catAmount = catQty * price
                                       return (
                                         <div key={cat.name} className="rounded-lg border border-white/10 overflow-hidden">
-                                          <div className="bg-white/10 px-3 py-2">
+                                          {/* Category header */}
+                                          <div className="bg-white/10 px-3 py-2 flex items-center justify-between">
                                             <p className="text-xs font-semibold text-gray-200 uppercase tracking-wider">{cat.name}</p>
+                                            {price > 0 && (
+                                              <span className="text-xs text-gray-400 tabular-nums">MVR {price.toFixed(2)}/pc</span>
+                                            )}
                                           </div>
+                                          {/* Size rows */}
                                           <div className="divide-y divide-white/5">
                                             {filledSizes.map(size => (
                                               <div key={size} className="flex items-center justify-between px-3 py-1.5">
                                                 <span className="text-sm text-gray-400 font-medium">{size}</span>
-                                                <span className="text-sm font-bold text-white tabular-nums">{catData[size]}</span>
+                                                <div className="flex items-center gap-3">
+                                                  {price > 0 && (
+                                                    <span className="text-xs text-gray-500 tabular-nums">
+                                                      MVR {(Number(catData[size]) * price).toFixed(2)}
+                                                    </span>
+                                                  )}
+                                                  <span className="text-sm font-bold text-white tabular-nums w-6 text-right">{catData[size]}</span>
+                                                </div>
                                               </div>
                                             ))}
                                           </div>
-                                          <div className="bg-white/5 px-3 py-1.5 flex justify-between">
-                                            <span className="text-xs text-gray-500">Total</span>
-                                            <span className="text-xs font-bold text-primary tabular-nums">
-                                              {filledSizes.reduce((sum, s) => sum + Number(catData[s] || 0), 0)}
-                                            </span>
+                                          {/* Category footer */}
+                                          <div className="bg-white/5 px-3 py-1.5 flex justify-between items-center">
+                                            <span className="text-xs text-gray-500">Subtotal</span>
+                                            <div className="flex items-center gap-3">
+                                              {price > 0 && (
+                                                <span className="text-xs font-semibold text-gray-300 tabular-nums">
+                                                  MVR {catAmount.toFixed(2)}
+                                                </span>
+                                              )}
+                                              <span className="text-xs font-bold text-primary tabular-nums">{catQty} pcs</span>
+                                            </div>
                                           </div>
                                         </div>
                                       )
                                     })}
                                   </div>
+                                  {/* Grand total bar */}
+                                  {hasPricing && (
+                                    <div className="mt-3 flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5">
+                                      <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Amount</span>
+                                      <div className="flex items-center gap-4">
+                                        <span className="text-xs text-primary font-bold tabular-nums">{grandQty} pcs</span>
+                                        <span className="text-base font-bold text-white tabular-nums">MVR {grandAmount.toFixed(2)}</span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )
                             })}
