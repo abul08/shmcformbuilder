@@ -50,8 +50,9 @@ function applySecurityHeaders(response: NextResponse, csp: string): NextResponse
 }
 
 export async function updateSession(request: NextRequest) {
-  // 1. Generate a fresh nonce for this request
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  // btoa() is a Web API available in all runtimes (including Vercel Edge Runtime).
+  // Buffer.from().toString('base64') is Node.js-only and crashes in Edge Runtime.
+  const nonce = btoa(crypto.randomUUID())
   const csp = buildCSP(nonce)
 
   // 2. Build modified request headers that carry the nonce.
