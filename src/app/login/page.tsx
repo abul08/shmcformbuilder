@@ -1,19 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { login, signup } from '@/actions/auth'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { LayoutDashboard, Mail, Lock, ArrowRight, Loader2, Github, Chrome } from 'lucide-react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { login } from '@/actions/auth'
+import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-
+  const router = useRouter()
 
 
   return (
@@ -30,19 +25,20 @@ export default function LoginPage() {
         </div>
 
         <div className="p-8">
-          <form action={async (formData) => {
+          <form onSubmit={async (e) => {
+            e.preventDefault()
             setError(null)
-            setMessage(null)
             setLoading(true)
 
-            // Add a small delay
-            await new Promise(resolve => setTimeout(resolve, 800))
-
+            const formData = new FormData(e.currentTarget)
             const result = await login(formData)
 
             if (result?.error) {
               setError(result.error)
               setLoading(false)
+            } else {
+              // Fallback client-side redirect if server action redirect was swallowed
+              router.push('/dashboard')
             }
           }} className="space-y-6">
             <div>
@@ -89,11 +85,8 @@ export default function LoginPage() {
               </div>
             )}
 
-            {message && (
-              <div className="rounded-md bg-green-500/10 px-3 py-2 ring-1 ring-inset ring-green-500/20">
-                <p className="text-sm text-green-400">{message}</p>
-              </div>
-            )}
+
+
 
             <button
               type="submit"

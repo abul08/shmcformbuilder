@@ -87,13 +87,38 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // 4. Refresh the Supabase auth token
+  // 4. Refresh the Supabase auth token and get user
+  let user = null
   try {
-    await supabase.auth.getUser()
+    const { data } = await supabase.auth.getUser()
+    user = data?.user ?? null
   } catch (e) {
     console.error('Middleware Supabase Auth Error:', e)
   }
 
-  // 5. Stamp all security headers (including nonce CSP) onto the response
+  const { pathname } = request.nextUrl
+
+  // 5. Route protection
+  const isAuthRoute = pathname.startsWith('/login')
+  const isProtectedRoute =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/forms')
+
+  // Unauthenticated user trying to access a protected route → send to /login
+  if (!user && isProtectedRoute) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Authenticated user trying to visit /login → send to /dashboard
+  if (user && isAuthRoute) {
+    const dashboardUrl = request.nextUrl.clone()
+    dashboardUrl.pathname = '/dashboard'
+    return NextResponse.redirect(dashboardUrl)
+  }
+
+  // 6. Stamp all security headers (including nonce CSP) onto the response
   return applySecurityHeaders(supabaseResponse, csp)
 }
