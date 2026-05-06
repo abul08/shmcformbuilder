@@ -14,22 +14,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  async function handleSubmit(formData: FormData) {
-    setError(null)
-    setMessage(null)
-    setLoading(true)
 
-    // Add a small delay to ensure the user sees the loading state
-    await new Promise(resolve => setTimeout(resolve, 800))
-
-    const result = await login(formData)
-
-    if (result?.error) {
-      setError(result.error)
-    }
-
-    setLoading(false)
-  }
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-8 sm:p-6">
@@ -45,10 +30,20 @@ export default function LoginPage() {
         </div>
 
         <div className="p-8">
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            handleSubmit(formData);
+          <form action={async (formData) => {
+            setError(null)
+            setMessage(null)
+            setLoading(true)
+
+            // Add a small delay
+            await new Promise(resolve => setTimeout(resolve, 800))
+
+            const result = await login(formData)
+
+            if (result?.error) {
+              setError(result.error)
+              setLoading(false)
+            }
           }} className="space-y-6">
             <div>
               <label htmlFor="username" className="block text-sm/6 font-medium text-white">
