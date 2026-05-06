@@ -8,12 +8,17 @@ export async function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
+  const isProduction = process.env.NODE_ENV === 'production'
+
   return createServerClient(
     url!,
     key!,
     {
       cookieOptions: {
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        sameSite: 'lax',
+        secure: isProduction,     // Secure flag required on HTTPS (production)
+        path: '/',
       },
       cookies: {
         getAll() {
