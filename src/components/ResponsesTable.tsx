@@ -131,7 +131,7 @@ export default function ResponsesTable({
           (f.options as any)?.label_dv?.includes('ނަން')
         ) || regularFields.find(f => f.type === 'short_text' || f.type === 'english_text' || f.type === 'dhivehi_text')
 
-        const sizeHeaders = ['#', 'Submitted At', 'Name', 'Field', 'Category', 'Size', 'Quantity', 'Unit Price', 'Total']
+        const sizeHeaders = ['#', 'Submitted At', 'Name', 'Field', 'Category', 'Sleeve', 'Size', 'Quantity', 'Unit Price', 'Total']
         const sizeRows: (string | number)[][] = []
 
         responses.forEach((r, idx) => {
@@ -143,31 +143,60 @@ export default function ResponsesTable({
 
           sizeTableFields.forEach(f => {
             const ans = r.form_answers.find(a => a.field_id === f.id)
-            const val = ans?.value as Record<string, Record<string, number>> | null | undefined
+            const val = ans?.value as Record<string, any> | null | undefined
             if (!val || typeof val !== 'object') return
 
             const cats: { name: string; sizes: string[]; price?: number }[] = (f.options as any)?.categories || []
-            // Iterate in defined order
             cats.forEach(cat => {
               const catData = val[cat.name]
               if (!catData) return
               const price = Number((cat as any).price) || 0
-              cat.sizes.forEach(size => {
-                const qty = catData[size]
-                if (qty !== undefined && qty !== null && qty !== ('' as any) && Number(qty) > 0) {
-                  sizeRows.push([
-                    idx + 1,
-                    new Date(r.submitted_at).toLocaleString(),
-                    respondentName,
-                    f.label,
-                    cat.name,
-                    size,
-                    Number(qty),
-                    price > 0 ? price : '',
-                    price > 0 ? Number(qty) * price : ''
-                  ])
-                }
-              })
+
+              // Detect sleeve-nested: values are objects not numbers
+              const isSleeved = Object.values(catData).some((v: any) => typeof v === 'object' && v !== null)
+
+              if (isSleeved) {
+                // { sleeveKey: { size: qty } }
+                Object.entries(catData as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
+                  const sleeveLabel = sleeveKey === 'LS' ? 'Long Sleeve' : sleeveKey === 'SS' ? 'Short Sleeve' : sleeveKey
+                  cat.sizes.forEach(size => {
+                    const qty = sleeveData[size]
+                    if (qty !== undefined && qty !== null && Number(qty) > 0) {
+                      sizeRows.push([
+                        idx + 1,
+                        new Date(r.submitted_at).toLocaleString(),
+                        respondentName,
+                        f.label,
+                        cat.name,
+                        sleeveLabel,
+                        size,
+                        Number(qty),
+                        price > 0 ? price : '',
+                        price > 0 ? Number(qty) * price : ''
+                      ])
+                    }
+                  })
+                })
+              } else {
+                // Flat: { size: qty }
+                cat.sizes.forEach(size => {
+                  const qty = (catData as Record<string, number>)[size]
+                  if (qty !== undefined && qty !== null && Number(qty) > 0) {
+                    sizeRows.push([
+                      idx + 1,
+                      new Date(r.submitted_at).toLocaleString(),
+                      respondentName,
+                      f.label,
+                      cat.name,
+                      '',
+                      size,
+                      Number(qty),
+                      price > 0 ? price : '',
+                      price > 0 ? Number(qty) * price : ''
+                    ])
+                  }
+                })
+              }
             })
           })
         })
@@ -319,20 +348,30 @@ export default function ResponsesTable({
                 const isExpanded = expandedRows.has(response.id)
                 const totalCols = sortedFields.length + (sizeTableFields.length > 0 ? 1 : 0) + 2
 
-                // Build size order summary for the row badge
+                // Build size order summary for the row badge (handles flat + sleeve-nested)
                 const sizeSummaryParts: string[] = []
                 sizeTableFields.forEach(f => {
                   const ans = response.form_answers.find(a => a.field_id === f.id)
-                  const val = ans?.value as Record<string, Record<string, number>> | null | undefined
+                  const val = ans?.value as Record<string, any> | null | undefined
                   if (!val || typeof val !== 'object') return
                   const cats: { name: string; sizes: string[] }[] = (f.options as any)?.categories || []
                   cats.forEach(cat => {
                     const catData = val[cat.name]
                     if (!catData) return
-                    const entries = cat.sizes
-                      .filter(s => catData[s] !== undefined && catData[s] !== null && Number(catData[s]) > 0)
-                      .map(s => `${s}×${catData[s]}`)
-                    if (entries.length) sizeSummaryParts.push(`${cat.name}: ${entries.join(', ')}`)
+                    const isSleeved = Object.values(catData).some((v: any) => typeof v === 'object' && v !== null)
+                    if (isSleeved) {
+                      Object.entries(catData as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
+                        const entries = cat.sizes
+                          .filter(s => Number(sleeveData[s]) > 0)
+                          .map(s => `${s}×${sleeveData[s]}`)
+                        if (entries.length) sizeSummaryParts.push(`${cat.name} (${sleeveKey}): ${entries.join(', ')}`)
+                      })
+                    } else {
+                      const entries = cat.sizes
+                        .filter(s => Number((catData as Record<string,number>)[s]) > 0)
+                        .map(s => `${s}×${(catData as Record<string,number>)[s]}`)
+                      if (entries.length) sizeSummaryParts.push(`${cat.name}: ${entries.join(', ')}`)
+                    }
                   })
                 })
 
@@ -440,77 +479,85 @@ export default function ResponsesTable({
                               const cats: { name: string; sizes: string[]; price?: number }[] = (f.options as any)?.categories || []
                               const hasPricing = cats.some(c => Number((c as any).price) > 0)
 
-                              const filledCats = cats.filter(cat => {
+                              // Build display rows: handle both flat and sleeve-nested
+                              type DetailRow = { key: string; label: string; price: number; sizeQtys: { size: string; qty: number }[]; catQty: number; catAmount: number }
+                              const detailRows: DetailRow[] = []
+                              let grandQty = 0
+                              let grandAmount = 0
+
+                              cats.forEach(cat => {
                                 const catData = val[cat.name]
-                                if (!catData) return false
-                                return cat.sizes.some(s => catData[s] !== undefined && Number(catData[s]) > 0)
+                                if (!catData) return
+                                const price = Number((cat as any).price) || 0
+                                const isSleeved = Object.values(catData).some((v: any) => typeof v === 'object' && v !== null)
+
+                                if (isSleeved) {
+                                  Object.entries(catData as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
+                                    const sizeQtys = cat.sizes.map(s => ({ size: s, qty: Number(sleeveData[s]) || 0 })).filter(sq => sq.qty > 0)
+                                    const catQty = sizeQtys.reduce((s, sq) => s + sq.qty, 0)
+                                    if (catQty > 0) {
+                                      const sleeveLabel = sleeveKey === 'LS' ? 'Long Sleeve' : sleeveKey === 'SS' ? 'Short Sleeve' : sleeveKey
+                                      const catAmount = catQty * price
+                                      grandQty += catQty; grandAmount += catAmount
+                                      detailRows.push({ key: `${cat.name}-${sleeveKey}`, label: `${cat.name} — ${sleeveLabel}`, price, sizeQtys, catQty, catAmount })
+                                    }
+                                  })
+                                } else {
+                                  const sizeQtys = cat.sizes.map(s => ({ size: s, qty: Number((catData as Record<string,number>)[s]) || 0 })).filter(sq => sq.qty > 0)
+                                  const catQty = sizeQtys.reduce((s, sq) => s + sq.qty, 0)
+                                  if (catQty > 0) {
+                                    const catAmount = catQty * price
+                                    grandQty += catQty; grandAmount += catAmount
+                                    detailRows.push({ key: cat.name, label: cat.name, price, sizeQtys, catQty, catAmount })
+                                  }
+                                }
                               })
 
-                              if (!filledCats.length) return null
-
-                              const grandQty = filledCats.reduce((sum, cat) => {
-                                const catData = val[cat.name] || {}
-                                return sum + cat.sizes.filter(s => Number(catData[s]) > 0).reduce((s2, sz) => s2 + Number(catData[sz] || 0), 0)
-                              }, 0)
-                              const grandAmount = filledCats.reduce((sum, cat) => {
-                                const catData = val[cat.name] || {}
-                                const price = Number((cat as any).price) || 0
-                                const qty = cat.sizes.filter(s => Number(catData[s]) > 0).reduce((s2, sz) => s2 + Number(catData[sz] || 0), 0)
-                                return sum + qty * price
-                              }, 0)
+                              if (!detailRows.length) return null
 
                               return (
                                 <div key={f.id}>
                                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">{f.label}</p>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {filledCats.map(cat => {
-                                      const catData = val[cat.name] || {}
-                                      const price = Number((cat as any).price) || 0
-                                      const filledSizes = cat.sizes.filter(
-                                        s => catData[s] !== undefined && Number(catData[s]) > 0
-                                      )
-                                      const catQty = filledSizes.reduce((sum, s) => sum + Number(catData[s] || 0), 0)
-                                      const catAmount = catQty * price
-                                      return (
-                                        <div key={cat.name} className="rounded-lg border border-white/10 overflow-hidden">
-                                          {/* Category header */}
-                                          <div className="bg-white/10 px-3 py-2 flex items-center justify-between">
-                                            <p className="text-xs font-semibold text-gray-200 uppercase tracking-wider">{cat.name}</p>
-                                            {price > 0 && (
-                                              <span className="text-xs text-gray-400 tabular-nums">MVR {price.toFixed(2)}/pc</span>
-                                            )}
-                                          </div>
-                                          {/* Size rows */}
-                                          <div className="divide-y divide-white/5">
-                                            {filledSizes.map(size => (
-                                              <div key={size} className="flex items-center justify-between px-3 py-1.5">
-                                                <span className="text-sm text-gray-400 font-medium">{size}</span>
-                                                <div className="flex items-center gap-3">
-                                                  {price > 0 && (
-                                                    <span className="text-xs text-gray-500 tabular-nums">
-                                                      MVR {(Number(catData[size]) * price).toFixed(2)}
-                                                    </span>
-                                                  )}
-                                                  <span className="text-sm font-bold text-white tabular-nums w-6 text-right">{catData[size]}</span>
-                                                </div>
+                                    {detailRows.map(row => (
+                                      <div key={row.key} className="rounded-lg border border-white/10 overflow-hidden">
+                                        {/* Category header */}
+                                        <div className="bg-white/10 px-3 py-2 flex items-center justify-between">
+                                          <p className="text-xs font-semibold text-gray-200 uppercase tracking-wider">{row.label}</p>
+                                          {row.price > 0 && (
+                                            <span className="text-xs text-gray-400 tabular-nums">MVR {row.price.toFixed(2)}/pc</span>
+                                          )}
+                                        </div>
+                                        {/* Size rows */}
+                                        <div className="divide-y divide-white/5">
+                                          {row.sizeQtys.map(({ size, qty }) => (
+                                            <div key={size} className="flex items-center justify-between px-3 py-1.5">
+                                              <span className="text-sm text-gray-400 font-medium">{size}</span>
+                                              <div className="flex items-center gap-3">
+                                                {row.price > 0 && (
+                                                  <span className="text-xs text-gray-500 tabular-nums">
+                                                    MVR {(qty * row.price).toFixed(2)}
+                                                  </span>
+                                                )}
+                                                <span className="text-sm font-bold text-white tabular-nums w-6 text-right">{qty}</span>
                                               </div>
-                                            ))}
-                                          </div>
-                                          {/* Category footer */}
-                                          <div className="bg-white/5 px-3 py-1.5 flex justify-between items-center">
-                                            <span className="text-xs text-gray-500">Subtotal</span>
-                                            <div className="flex items-center gap-3">
-                                              {price > 0 && (
-                                                <span className="text-xs font-semibold text-gray-300 tabular-nums">
-                                                  MVR {catAmount.toFixed(2)}
-                                                </span>
-                                              )}
-                                              <span className="text-xs font-bold text-primary tabular-nums">{catQty} pcs</span>
                                             </div>
+                                          ))}
+                                        </div>
+                                        {/* Category footer */}
+                                        <div className="bg-white/5 px-3 py-1.5 flex justify-between items-center">
+                                          <span className="text-xs text-gray-500">Subtotal</span>
+                                          <div className="flex items-center gap-3">
+                                            {row.price > 0 && (
+                                              <span className="text-xs font-semibold text-gray-300 tabular-nums">
+                                                MVR {row.catAmount.toFixed(2)}
+                                              </span>
+                                            )}
+                                            <span className="text-xs font-bold text-primary tabular-nums">{row.catQty} pcs</span>
                                           </div>
                                         </div>
-                                      )
-                                    })}
+                                      </div>
+                                    ))}
                                   </div>
                                   {/* Grand total bar */}
                                   {hasPricing && (
