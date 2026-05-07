@@ -52,8 +52,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 export function useToast() {
   const context = useContext(ToastContext)
+  // During SSR the provider hasn't mounted yet — return a safe no-op so the
+  // server render succeeds. The real implementation kicks in on the client.
   if (!context) {
-    throw new Error('useToast must be used within ToastProvider')
+    return {
+      toasts: [],
+      addToast: () => {},
+      removeToast: () => {},
+    } as ToastContextValue
   }
   return context
 }

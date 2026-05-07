@@ -24,10 +24,10 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
     const [error, setError] = useState<string | null>(null)
     // Tracks which categories the respondent has opted into per size_table field
     const [selectedCategories, setSelectedCategories] = useState<Record<string, string[]>>({})
-    // Tracks which sizes the respondent has selected per field per category
-    const [selectedSizes, setSelectedSizes] = useState<Record<string, Record<string, string[]>>>({})
-    // Tracks selected sleeve type (LS/SS) per field per category (for categories that have sleeveTypes)
-    const [selectedSleeve, setSelectedSleeve] = useState<Record<string, Record<string, string>>>({})
+    // Tracks which sizes the respondent has selected — field -> catName -> sleeveKey -> sizes[]
+    const [selectedSizes, setSelectedSizes] = useState<Record<string, Record<string, Record<string, string[]>>>>({})
+    // Tracks selected sleeve types (multi-select) per field per category
+    const [selectedSleeve, setSelectedSleeve] = useState<Record<string, Record<string, string[]>>>({})
     const { confirm, dialog } = useConfirmDialog()
     const { addToast } = useToast()
 
@@ -666,11 +666,21 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                                 onClick={() => {
                                                                     const current = selectedCategories[field.id] || []
                                                                     if (isSelected) {
-                                                                        // Deselect — remove category and clear its answers
+                                                                        // Deselect — remove category and clear its answers + sleeve state
                                                                         setSelectedCategories(prev => ({
                                                                             ...prev,
                                                                             [field.id]: current.filter(n => n !== cat.name)
                                                                         }))
+                                                                        setSelectedSleeve(prev => {
+                                                                            const f = { ...(prev[field.id] || {}) }
+                                                                            delete f[cat.name]
+                                                                            return { ...prev, [field.id]: f }
+                                                                        })
+                                                                        setSelectedSizes(prev => {
+                                                                            const f = { ...(prev[field.id] || {}) }
+                                                                            delete f[cat.name]
+                                                                            return { ...prev, [field.id]: f }
+                                                                        })
                                                                         setAnswers(prev => {
                                                                             const fieldAnswer = { ...(prev[field.id] as any || {}) }
                                                                             delete fieldAnswer[cat.name]
@@ -706,199 +716,204 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                         (selectedCategories[field.id] || []).includes(cat.name)
                                                     )
                                                     .map((cat: { name: string, sizes: string[] }, catIdx: number) => {
-                                                        const chosenSizes: string[] = selectedSizes[field.id]?.[cat.name] || []
+                                                        const sleeveTypes: string[] =
+                                                            (cat as any).sleeveTypes ||
+                                                            (['Kids', 'Adults'].includes(cat.name) ? ['LS', 'SS'] : [])
+                                                        const activeSleeves: string[] = selectedSleeve[field.id]?.[cat.name] || []
                                                         return (
-                                                            <div key={catIdx} className="space-y-3">
+                                                            <div key={catIdx} className="space-y-4">
                                                                 {/* Category heading */}
                                                                 <p className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
                                                                     <span className="inline-block w-2 h-2 rounded-full bg-primary/60"></span>
                                                                     {cat.name}
                                                                 </p>
 
-                                                                {/* Sleeve type toggle — for categories with sleeveTypes OR named Kids/Adults */}
-                                                                {(() => {
-                                                                    // Use sleeveTypes from data, or default for known category names
-                                                                    const sleeveTypes: string[] =
-                                                                        (cat as any).sleeveTypes ||
-                                                                        (['Kids', 'Adults'].includes(cat.name) ? ['LS', 'SS'] : [])
-                                                                    if (sleeveTypes.length === 0) return null
-                                                                    const activeSleeve = selectedSleeve[field.id]?.[cat.name] || ''
-                                                                    return (
-                                                                        <div>
-                                                                            <p className="text-xs text-gray-500 mb-2">Select sleeve type:</p>
-                                                                            <div className="flex gap-2">
-                                                                                {sleeveTypes.map((sleeve: string) => (
+                                                                {/* Sleeve type toggles — multi-select */}
+                                                                {sleeveTypes.length > 0 && (
+                                                                    <div>
+                                                                        <p className="text-xs text-gray-500 mb-2">Select sleeve type(s):</p>
+                                                                        <div className="flex gap-2">
+                                                                            {sleeveTypes.map((sleeve: string) => {
+                                                                                const isActive = activeSleeves.includes(sleeve)
+                                                                                return (
                                                                                     <button
                                                                                         key={sleeve}
                                                                                         type="button"
                                                                                         onClick={() => {
-                                                                                            // Changing sleeve clears sizes & answers for this category
-                                                                                            setSelectedSleeve(prev => ({
-                                                                                                ...prev,
-                                                                                                [field.id]: { ...(prev[field.id] || {}), [cat.name]: sleeve }
-                                                                                            }))
-                                                                                            setSelectedSizes(prev => ({
-                                                                                                ...prev,
-                                                                                                [field.id]: { ...(prev[field.id] || {}), [cat.name]: [] }
-                                                                                            }))
-                                                                                            setAnswers(prev => {
-                                                                                                const fieldAns = { ...(prev[field.id] as any || {}) }
-                                                                                                delete fieldAns[cat.name]
-                                                                                                return { ...prev, [field.id]: fieldAns }
-                                                                                            })
+                                                                                            if (isActive) {
+                                                                                                // Deselect — remove this sleeve and clear its sizes/answers
+                                                                                                setSelectedSleeve(prev => ({
+                                                                                                    ...prev,
+                                                                                                    [field.id]: { ...(prev[field.id] || {}), [cat.name]: activeSleeves.filter(s => s !== sleeve) }
+                                                                                                }))
+                                                                                                setSelectedSizes(prev => {
+                                                                                                    const catSizes = { ...(prev[field.id]?.[cat.name] || {}) }
+                                                                                                    delete catSizes[sleeve]
+                                                                                                    return { ...prev, [field.id]: { ...(prev[field.id] || {}), [cat.name]: catSizes } }
+                                                                                                })
+                                                                                                setAnswers(prev => {
+                                                                                                    const fieldAns = { ...(prev[field.id] as any || {}) }
+                                                                                                    const catAns = { ...(fieldAns[cat.name] || {}) }
+                                                                                                    delete catAns[sleeve]
+                                                                                                    return { ...prev, [field.id]: { ...fieldAns, [cat.name]: catAns } }
+                                                                                                })
+                                                                                            } else {
+                                                                                                // Select
+                                                                                                setSelectedSleeve(prev => ({
+                                                                                                    ...prev,
+                                                                                                    [field.id]: { ...(prev[field.id] || {}), [cat.name]: [...activeSleeves, sleeve] }
+                                                                                                }))
+                                                                                            }
                                                                                         }}
                                                                                         className={`px-4 py-1.5 rounded-md text-sm font-bold border transition-all ${
-                                                                                            activeSleeve === sleeve
+                                                                                            isActive
                                                                                                 ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
                                                                                                 : 'bg-white/5 text-gray-400 border-white/15 hover:border-white/30 hover:text-gray-200'
                                                                                         }`}
                                                                                     >
                                                                                         {sleeve === 'LS' ? '🧥 Long Sleeve' : '👕 Short Sleeve'}
                                                                                     </button>
-                                                                                ))}
-                                                                            </div>
+                                                                                )
+                                                                            })}
                                                                         </div>
-                                                                    )
-                                                                })()}
+                                                                    </div>
+                                                                )}
 
-                                                                {/* Size chips — only show if sleeve is chosen (or no sleeve required) */}
-                                                                {(() => {
-                                                                    const sleeveTypes: string[] =
-                                                                        (cat as any).sleeveTypes ||
-                                                                        (['Kids', 'Adults'].includes(cat.name) ? ['LS', 'SS'] : [])
-                                                                    const activeSleeve = selectedSleeve[field.id]?.[cat.name] || ''
-                                                                    if (sleeveTypes.length > 0 && !activeSleeve) return null
-                                                                    return (
-                                                                        <div>
-                                                                            <p className="text-xs text-gray-500 mb-2">Select sizes:</p>
-                                                                            <div className="flex flex-wrap gap-2">
-                                                                                {(cat.sizes || []).map((size: string) => {
-                                                                                    const isSizeSelected = chosenSizes.includes(size)
-                                                                                    return (
-                                                                                        <button
-                                                                                            key={size}
-                                                                                            type="button"
-                                                                                            onClick={() => {
-                                                                                                if (isSizeSelected) {
-                                                                                                    setSelectedSizes(prev => ({
-                                                                                                        ...prev,
-                                                                                                        [field.id]: {
-                                                                                                            ...(prev[field.id] || {}),
-                                                                                                            [cat.name]: chosenSizes.filter(s => s !== size)
-                                                                                                        }
-                                                                                                    }))
-                                                                                                    setAnswers(prev => {
-                                                                                                        const fieldAns = { ...(prev[field.id] as any || {}) }
-                                                                                                        const sleeveKey = activeSleeve || cat.name
-                                                                                                        const catAns = activeSleeve
-                                                                                                            ? { ...(fieldAns[cat.name]?.[activeSleeve] || {}) }
-                                                                                                            : { ...(fieldAns[cat.name] || {}) }
-                                                                                                        delete catAns[size]
-                                                                                                        if (activeSleeve) {
-                                                                                                            return { ...prev, [field.id]: { ...fieldAns, [cat.name]: { ...(fieldAns[cat.name] || {}), [activeSleeve]: catAns } } }
-                                                                                                        }
-                                                                                                        return { ...prev, [field.id]: { ...fieldAns, [cat.name]: catAns } }
-                                                                                                    })
-                                                                                                } else {
-                                                                                                    setSelectedSizes(prev => ({
-                                                                                                        ...prev,
-                                                                                                        [field.id]: {
-                                                                                                            ...(prev[field.id] || {}),
-                                                                                                            [cat.name]: [...chosenSizes, size]
-                                                                                                        }
-                                                                                                    }))
-                                                                                                }
-                                                                                            }}
-                                                                                            className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${
-                                                                                                isSizeSelected
-                                                                                                    ? 'bg-primary/20 text-primary border-primary/50 shadow-sm'
-                                                                                                    : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/25 hover:text-gray-300'
-                                                                                            }`}
-                                                                                        >
-                                                                                            {size}
-                                                                                        </button>
-                                                                                    )
-                                                                                })}
-                                                                            </div>
-                                                                        </div>
-                                                                    )
-                                                                })()}
+                                                                {/* Per-sleeve: size chips + quantity table */}
+                                                                {(sleeveTypes.length > 0 ? activeSleeves : ['_no_sleeve_']).map((sleeve: string) => {
+                                                                    const sleeveKey = sleeve === '_no_sleeve_' ? undefined : sleeve
+                                                                    const chosenSizes: string[] = sleeveKey
+                                                                        ? (selectedSizes[field.id]?.[cat.name]?.[sleeveKey] || [])
+                                                                        : (selectedSizes[field.id]?.[cat.name]?.['_no_sleeve_'] || [])
+                                                                    const catAnswer = sleeveKey
+                                                                        ? ((answers[field.id] as any)?.[cat.name]?.[sleeveKey] || {})
+                                                                        : ((answers[field.id] as any)?.[cat.name] || {})
 
-                                                                {/* Quantity inputs */}
-                                                                {chosenSizes.length > 0 && (() => {
-                                                                    const sleeveTypes: string[] =
-                                                                        (cat as any).sleeveTypes ||
-                                                                        (['Kids', 'Adults'].includes(cat.name) ? ['LS', 'SS'] : [])
-                                                                    const activeSleeve = selectedSleeve[field.id]?.[cat.name] || ''
-                                                                    if (sleeveTypes.length > 0 && !activeSleeve) return null
-                                                                    const catAnswer = activeSleeve
-                                                                        ? ((answers[field.id] as any)?.[cat.name]?.[activeSleeve]) || {}
-                                                                        : ((answers[field.id] as any)?.[cat.name]) || {}
                                                                     return (
-                                                                        <div className="space-y-2">
-                                                                            {activeSleeve && (
-                                                                                <p className="text-xs text-gray-500">
-                                                                                    Quantities for <span className="font-semibold text-primary">{activeSleeve === 'LS' ? 'Long Sleeve' : 'Short Sleeve'}</span>:
+                                                                        <div key={sleeve} className="space-y-3 pl-3 border-l-2 border-primary/20">
+                                                                            {sleeveKey && (
+                                                                                <p className="text-xs font-semibold text-primary uppercase tracking-wider">
+                                                                                    {sleeveKey === 'LS' ? '🧥 Long Sleeve' : '👕 Short Sleeve'}
                                                                                 </p>
                                                                             )}
-                                                                            <div className="rounded-lg overflow-hidden border border-white/10">
-                                                                                <div className="grid grid-cols-2 bg-white/10">
-                                                                                    <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider">Size</div>
-                                                                                    <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider text-center">Quantity</div>
-                                                                                </div>
-                                                                                {(cat.sizes || []).filter((s: string) => chosenSizes.includes(s)).map((size: string, sizeIdx: number) => (
-                                                                                    <div key={sizeIdx} className="grid grid-cols-2 border-t border-white/10 items-center">
-                                                                                        <div className="px-4 py-2.5 text-sm text-gray-300 font-semibold">{size}</div>
-                                                                                        <div className="px-3 py-2">
-                                                                                            <input
-                                                                                                type="number"
-                                                                                                min="0"
-                                                                                                autoFocus={sizeIdx === 0}
-                                                                                                value={catAnswer[size] ?? ''}
-                                                                                                onChange={(e) => {
-                                                                                                    const val = e.target.value === '' ? undefined : parseInt(e.target.value, 10)
-                                                                                                    const current = (answers[field.id] as any) || {}
-                                                                                                    if (activeSleeve) {
-                                                                                                        const currentCat = current[cat.name] || {}
-                                                                                                        const currentSleeve = currentCat[activeSleeve] || {}
-                                                                                                        setAnswers(prev => ({
+
+                                                                            {/* Size chips */}
+                                                                            <div>
+                                                                                <p className="text-xs text-gray-500 mb-2">Select sizes:</p>
+                                                                                <div className="flex flex-wrap gap-2">
+                                                                                    {(cat.sizes || []).map((size: string) => {
+                                                                                        const isSizeSelected = chosenSizes.includes(size)
+                                                                                        return (
+                                                                                            <button
+                                                                                                key={size}
+                                                                                                type="button"
+                                                                                                onClick={() => {
+                                                                                                    const sKey = sleeveKey || '_no_sleeve_'
+                                                                                                    if (isSizeSelected) {
+                                                                                                        setSelectedSizes(prev => ({
                                                                                                             ...prev,
                                                                                                             [field.id]: {
-                                                                                                                ...current,
-                                                                                                                [cat.name]: { ...currentCat, [activeSleeve]: { ...currentSleeve, [size]: val } }
+                                                                                                                ...(prev[field.id] || {}),
+                                                                                                                [cat.name]: {
+                                                                                                                    ...(prev[field.id]?.[cat.name] || {}),
+                                                                                                                    [sKey]: chosenSizes.filter(s => s !== size)
+                                                                                                                }
                                                                                                             }
                                                                                                         }))
+                                                                                                        setAnswers(prev => {
+                                                                                                            const fieldAns = { ...(prev[field.id] as any || {}) }
+                                                                                                            if (sleeveKey) {
+                                                                                                                const catAns = { ...(fieldAns[cat.name] || {}) }
+                                                                                                                const sleeveAns = { ...(catAns[sleeveKey] || {}) }
+                                                                                                                delete sleeveAns[size]
+                                                                                                                return { ...prev, [field.id]: { ...fieldAns, [cat.name]: { ...catAns, [sleeveKey]: sleeveAns } } }
+                                                                                                            } else {
+                                                                                                                const catAns = { ...(fieldAns[cat.name] || {}) }
+                                                                                                                delete catAns[size]
+                                                                                                                return { ...prev, [field.id]: { ...fieldAns, [cat.name]: catAns } }
+                                                                                                            }
+                                                                                                        })
                                                                                                     } else {
-                                                                                                        const currentCat = current[cat.name] || {}
-                                                                                                        setAnswers(prev => ({
+                                                                                                        setSelectedSizes(prev => ({
                                                                                                             ...prev,
                                                                                                             [field.id]: {
-                                                                                                                ...current,
-                                                                                                                [cat.name]: { ...currentCat, [size]: val }
+                                                                                                                ...(prev[field.id] || {}),
+                                                                                                                [cat.name]: {
+                                                                                                                    ...(prev[field.id]?.[cat.name] || {}),
+                                                                                                                    [sKey]: [...chosenSizes, size]
+                                                                                                                }
                                                                                                             }
                                                                                                         }))
                                                                                                     }
                                                                                                 }}
-                                                                                                placeholder="0"
-                                                                                                className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-gray-300 text-center outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-600 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-                                                                                            />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                ))}
-                                                                                {/* Subtotal */}
-                                                                                {(() => {
-                                                                                    const subtotal = chosenSizes.reduce((sum, s) => sum + (Number(catAnswer[s]) || 0), 0)
-                                                                                    return subtotal > 0 ? (
-                                                                                        <div className="grid grid-cols-2 border-t border-primary/20 bg-primary/5">
-                                                                                            <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider">Subtotal</div>
-                                                                                            <div className="px-4 py-2 text-sm font-bold text-primary text-center tabular-nums">{subtotal}</div>
-                                                                                        </div>
-                                                                                    ) : null
-                                                                                })()}
+                                                                                                className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${
+                                                                                                    isSizeSelected
+                                                                                                        ? 'bg-primary/20 text-primary border-primary/50 shadow-sm'
+                                                                                                        : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/25 hover:text-gray-300'
+                                                                                                }`}
+                                                                                            >
+                                                                                                {size}
+                                                                                            </button>
+                                                                                        )
+                                                                                    })}
+                                                                                </div>
                                                                             </div>
+
+                                                                            {/* Quantity table */}
+                                                                            {chosenSizes.length > 0 && (
+                                                                                <div className="rounded-lg overflow-hidden border border-white/10">
+                                                                                    <div className="grid grid-cols-2 bg-white/10">
+                                                                                        <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider">Size</div>
+                                                                                        <div className="px-4 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wider text-center">Quantity</div>
+                                                                                    </div>
+                                                                                    {(cat.sizes || []).filter((s: string) => chosenSizes.includes(s)).map((size: string, sizeIdx: number) => (
+                                                                                        <div key={sizeIdx} className="grid grid-cols-2 border-t border-white/10 items-center">
+                                                                                            <div className="px-4 py-2.5 text-sm text-gray-300 font-semibold">{size}</div>
+                                                                                            <div className="px-3 py-2">
+                                                                                                <input
+                                                                                                    type="number"
+                                                                                                    min="0"
+                                                                                                    autoFocus={sizeIdx === 0}
+                                                                                                    value={catAnswer[size] ?? ''}
+                                                                                                    onChange={(e) => {
+                                                                                                        const val = e.target.value === '' ? undefined : parseInt(e.target.value, 10)
+                                                                                                        const current = (answers[field.id] as any) || {}
+                                                                                                        if (sleeveKey) {
+                                                                                                            const currentCat = current[cat.name] || {}
+                                                                                                            const currentSleeve = currentCat[sleeveKey] || {}
+                                                                                                            setAnswers(prev => ({
+                                                                                                                ...prev,
+                                                                                                                [field.id]: { ...current, [cat.name]: { ...currentCat, [sleeveKey]: { ...currentSleeve, [size]: val } } }
+                                                                                                            }))
+                                                                                                        } else {
+                                                                                                            const currentCat = current[cat.name] || {}
+                                                                                                            setAnswers(prev => ({
+                                                                                                                ...prev,
+                                                                                                                [field.id]: { ...current, [cat.name]: { ...currentCat, [size]: val } }
+                                                                                                            }))
+                                                                                                        }
+                                                                                                    }}
+                                                                                                    placeholder="0"
+                                                                                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-gray-300 text-center outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-600 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                                                                                                />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                    {/* Subtotal */}
+                                                                                    {(() => {
+                                                                                        const subtotal = chosenSizes.reduce((sum, s) => sum + (Number(catAnswer[s]) || 0), 0)
+                                                                                        return subtotal > 0 ? (
+                                                                                            <div className="grid grid-cols-2 border-t border-primary/20 bg-primary/5">
+                                                                                                <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider">Subtotal</div>
+                                                                                                <div className="px-4 py-2 text-sm font-bold text-primary text-center tabular-nums">{subtotal}</div>
+                                                                                            </div>
+                                                                                        ) : null
+                                                                                    })()}
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     )
-                                                                })()}
+                                                                })}
 
                                                             </div>
                                                         )
