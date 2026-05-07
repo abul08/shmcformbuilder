@@ -157,7 +157,7 @@ export default function ResponsesTable({
 
               if (isSleeved) {
                 // { sleeveKey: { size: qty } }
-                Object.entries(catData as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
+                Object.entries(catData as unknown as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
                   const sleeveLabel = sleeveKey === 'LS' ? 'Long Sleeve' : sleeveKey === 'SS' ? 'Short Sleeve' : sleeveKey
                   cat.sizes.forEach(size => {
                     const qty = sleeveData[size]
@@ -180,7 +180,7 @@ export default function ResponsesTable({
               } else {
                 // Flat: { size: qty }
                 cat.sizes.forEach(size => {
-                  const qty = (catData as Record<string, number>)[size]
+                  const qty = (catData as unknown as Record<string, number>)[size]
                   if (qty !== undefined && qty !== null && Number(qty) > 0) {
                     sizeRows.push([
                       idx + 1,
@@ -360,7 +360,7 @@ export default function ResponsesTable({
                     if (!catData) return
                     const isSleeved = Object.values(catData).some((v: any) => typeof v === 'object' && v !== null)
                     if (isSleeved) {
-                      Object.entries(catData as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
+                      Object.entries(catData as unknown as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
                         const entries = cat.sizes
                           .filter(s => Number(sleeveData[s]) > 0)
                           .map(s => `${s}×${sleeveData[s]}`)
@@ -368,8 +368,8 @@ export default function ResponsesTable({
                       })
                     } else {
                       const entries = cat.sizes
-                        .filter(s => Number((catData as Record<string,number>)[s]) > 0)
-                        .map(s => `${s}×${(catData as Record<string,number>)[s]}`)
+                        .filter(s => Number((catData as unknown as Record<string,number>)[s]) > 0)
+                        .map(s => `${s}×${(catData as unknown as Record<string,number>)[s]}`)
                       if (entries.length) sizeSummaryParts.push(`${cat.name}: ${entries.join(', ')}`)
                     }
                   })
@@ -492,7 +492,7 @@ export default function ResponsesTable({
                                 const isSleeved = Object.values(catData).some((v: any) => typeof v === 'object' && v !== null)
 
                                 if (isSleeved) {
-                                  Object.entries(catData as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
+                                  Object.entries(catData as unknown as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
                                     const sizeQtys = cat.sizes.map(s => ({ size: s, qty: Number(sleeveData[s]) || 0 })).filter(sq => sq.qty > 0)
                                     const catQty = sizeQtys.reduce((s, sq) => s + sq.qty, 0)
                                     if (catQty > 0) {
@@ -503,7 +503,7 @@ export default function ResponsesTable({
                                     }
                                   })
                                 } else {
-                                  const sizeQtys = cat.sizes.map(s => ({ size: s, qty: Number((catData as Record<string,number>)[s]) || 0 })).filter(sq => sq.qty > 0)
+                                  const sizeQtys = cat.sizes.map(s => ({ size: s, qty: Number((catData as unknown as Record<string,number>)[s]) || 0 })).filter(sq => sq.qty > 0)
                                   const catQty = sizeQtys.reduce((s, sq) => s + sq.qty, 0)
                                   if (catQty > 0) {
                                     const catAmount = catQty * price
