@@ -948,17 +948,60 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                             const fieldAnswer = (answers[field.id] as any) || {}
                                             const hasPricing = cats.some(c => Number((c as any).price) > 0)
 
-                                            // Build rows only for filled quantities
-                                            const summaryRows = cats
-                                                .map(cat => {
-                                                    const catData = fieldAnswer[cat.name] || {}
-                                                    const price = Number((cat as any).price) || 0
-                                                    const sizes = (cat.sizes || []).filter((s: string) => Number(catData[s]) > 0)
-                                                    const catQty = sizes.reduce((sum, s) => sum + Number(catData[s]), 0)
-                                                    const catAmount = catQty * price
-                                                    return { name: cat.name, sizes, catData, catQty, price, catAmount }
-                                                })
-                                                .filter(row => row.catQty > 0)
+                                            // Build rows: one row per cat (or per cat+sleeve for LS/SS)
+                                            type SummaryRow = {
+                                                key: string
+                                                label: string
+                                                price: number
+                                                sizeQtys: Array<{ size: string; qty: number }>
+                                                catQty: number
+                                                catAmount: number
+                                            }
+                                            const summaryRows: SummaryRow[] = []
+
+                                            for (const cat of cats) {
+                                                const catData = fieldAnswer[cat.name] || {}
+                                                const price = Number((cat as any).price) || 0
+
+                                                // Detect if catData is sleeve-nested: values are objects not numbers
+                                                const isSleeved = Object.values(catData).some(v => typeof v === 'object' && v !== null && !Array.isArray(v))
+
+                                                if (isSleeved) {
+                                                    // One row per sleeve key
+                                                    for (const [sleeveKey, sleeveData] of Object.entries(catData as Record<string, Record<string, number>>)) {
+                                                        const sizeQtys = (cat.sizes || [])
+                                                            .map((s: string) => ({ size: s, qty: Number(sleeveData[s]) || 0 }))
+                                                            .filter(sq => sq.qty > 0)
+                                                        const catQty = sizeQtys.reduce((sum, sq) => sum + sq.qty, 0)
+                                                        if (catQty > 0) {
+                                                            summaryRows.push({
+                                                                key: `${cat.name}-${sleeveKey}`,
+                                                                label: `${cat.name} — ${sleeveKey === 'LS' ? 'Long Sleeve' : sleeveKey === 'SS' ? 'Short Sleeve' : sleeveKey}`,
+                                                                price,
+                                                                sizeQtys,
+                                                                catQty,
+                                                                catAmount: catQty * price,
+                                                            })
+                                                        }
+                                                    }
+                                                } else {
+                                                    // Flat structure
+                                                    const sizeQtys = (cat.sizes || [])
+                                                        .map((s: string) => ({ size: s, qty: Number((catData as Record<string, number>)[s]) || 0 }))
+                                                        .filter(sq => sq.qty > 0)
+                                                    const catQty = sizeQtys.reduce((sum, sq) => sum + sq.qty, 0)
+                                                    if (catQty > 0) {
+                                                        summaryRows.push({
+                                                            key: cat.name,
+                                                            label: cat.name,
+                                                            price,
+                                                            sizeQtys,
+                                                            catQty,
+                                                            catAmount: catQty * price,
+                                                        })
+                                                    }
+                                                }
+                                            }
 
                                             const grandQty = summaryRows.reduce((sum, row) => sum + row.catQty, 0)
                                             const grandAmount = summaryRows.reduce((sum, row) => sum + row.catAmount, 0)
@@ -984,10 +1027,10 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                     {/* Rows */}
                                                     <div className="divide-y divide-white/5">
                                                         {summaryRows.map(row => (
-                                                            <div key={row.name} className="px-4 py-3">
+                                                            <div key={row.key} className="px-4 py-3">
                                                                 <div className="flex items-start justify-between gap-3 mb-2">
                                                                     <div>
-                                                                        <p className="text-xs font-semibold text-gray-300">{row.name}</p>
+                                                                        <p className="text-xs font-semibold text-gray-300">{row.label}</p>
                                                                         {hasPricing && row.price > 0 && (
                                                                             <p className="text-xs text-gray-500 mt-0.5">MVR {row.price.toFixed(2)} / pc</p>
                                                                         )}
@@ -1001,11 +1044,11 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                                 </div>
                                                                 {/* Size chips */}
                                                                 <div className="flex flex-wrap gap-1.5">
-                                                                    {row.sizes.map((size: string) => (
+                                                                    {row.sizeQtys.map(({ size, qty }) => (
                                                                         <span key={size} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-gray-200">
                                                                             <span className="font-semibold">{size}</span>
                                                                             <span className="text-gray-400">×</span>
-                                                                            <span className="font-bold text-white tabular-nums">{row.catData[size]}</span>
+                                                                            <span className="font-bold text-white tabular-nums">{qty}</span>
                                                                         </span>
                                                                     ))}
                                                                 </div>
