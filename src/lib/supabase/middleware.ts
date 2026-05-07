@@ -6,14 +6,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Next.js App Router reads `x-nonce` from the request headers and automatically
 // adds nonce="{nonce}" to every inline <script> it emits for hydration.
 // Combined with 'strict-dynamic', this removes the need for 'unsafe-inline'.
-function buildCSP(nonce: string): string {
+function buildCSP(): string {
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 
   const directives: string[] = [
     `default-src 'self'`,
-    // nonce covers Next.js hydration scripts; strict-dynamic covers scripts
-    // they load. No 'unsafe-inline' needed on modern browsers.
-    `script-src 'nonce-${nonce}' 'strict-dynamic'`,
+    // 'self' covers all Next.js JS chunks served from the same origin.
+    // 'unsafe-inline' is needed for Next.js inline hydration scripts.
+    // 'unsafe-eval' is needed for Next.js dev & some production builds.
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
     // Styles: 'unsafe-inline' is accepted for style-src (much lower risk than script)
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `font-src 'self' https://fonts.gstatic.com data:`,
@@ -50,15 +51,12 @@ function applySecurityHeaders(response: NextResponse, csp: string): NextResponse
 }
 
 export async function updateSession(request: NextRequest) {
-  // btoa() is a Web API available in all runtimes (including Vercel Edge Runtime).
-  // Buffer.from().toString('base64') is Node.js-only and crashes in Edge Runtime.
-  const nonce = btoa(crypto.randomUUID())
-  const csp = buildCSP(nonce)
+  const csp = buildCSP()
 
-  // 2. Build modified request headers that carry the nonce.
-  //    Next.js reads 'x-nonce' and stamps it on all inline hydration <script> tags.
+
+  // Build modified request headers.
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-nonce', nonce)
+
 
   // 3. Create the initial Supabase response using the nonce-carrying headers.
   let supabaseResponse = NextResponse.next({

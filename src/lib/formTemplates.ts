@@ -70,8 +70,8 @@ export const formTemplates: FormTemplate[] = [
         required: false,
         options: {
           categories: [
-            { name: 'Kids', sizes: ['4XS', '3XS', '2XS', 'XS', 'S', 'M', 'L', 'XL', '2XL'] },
-            { name: 'Adults', sizes: ['2XS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL', '7XL'] },
+            { name: 'Kids', sizes: ['4XS', '3XS', '2XS', 'XS', 'S', 'M', 'L', 'XL', '2XL'], sleeveTypes: ['LS', 'SS'] },
+            { name: 'Adults', sizes: ['2XS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL', '7XL'], sleeveTypes: ['LS', 'SS'] },
             { name: 'Muslimah', sizes: ['2XS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL', '7XL', '8XL'] },
             { name: 'Baby Romper', sizes: ['XS', 'S', 'M', 'L', 'XL'] },
             { name: 'Ladies', sizes: ['2XS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'] },
