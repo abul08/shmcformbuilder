@@ -80,7 +80,13 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                     for (const catName of fieldSelectedCategories) {
                         const cat = cats.find(c => c.name === catName)
                         if (cat) {
-                            const hasQty = cat.sizes.some(s => Number((fieldAnswer[catName] || {})[s]) > 0)
+                            const catAnswer = (fieldAnswer as any)[catName] || {}
+                            // catAnswer may be { size: qty } OR { sleeveKey: { size: qty } }
+                            const hasQty = Object.values(catAnswer).some(v =>
+                                typeof v === 'number'
+                                    ? v > 0
+                                    : Object.values(v as Record<string, number>).some(n => Number(n) > 0)
+                            )
                             if (!hasQty) {
                                 addToast(`Please enter at least one quantity for category: ${catName}`, 'error')
                                 hasError = true
@@ -90,13 +96,24 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                 }
 
                 // Rule 3: every selected size must have a quantity > 0
+                // selectedSizes shape: field -> catName -> sleeveKey -> sizes[]
                 const fieldSelectedSizes = selectedSizes[field.id] || {}
                 for (const cat of cats) {
-                    const chosenSizes: string[] = fieldSelectedSizes[cat.name] || []
-                    for (const size of chosenSizes) {
-                        const qty = Number((fieldAnswer[cat.name] || {})[size])
+                    const catSleeveMap = fieldSelectedSizes[cat.name] || {}
+                    // catSleeveMap is { sleeveKey: string[] } — flatten all sleeve keys
+                    const allChosenSizes: Array<{ sleeve: string; size: string }> = []
+                    for (const [sleeveKey, sizes] of Object.entries(catSleeveMap)) {
+                        for (const size of sizes as string[]) {
+                            allChosenSizes.push({ sleeve: sleeveKey, size })
+                        }
+                    }
+                    for (const { sleeve, size } of allChosenSizes) {
+                        const catAnswer = (fieldAnswer as any)[cat.name] || {}
+                        const qty = sleeve === '_no_sleeve_'
+                            ? Number(catAnswer[size])
+                            : Number((catAnswer[sleeve] || {})[size])
                         if (!qty || qty <= 0) {
-                            addToast(`Please enter a quantity for ${cat.name} — ${size}`, 'error')
+                            addToast(`Please enter a quantity for ${cat.name}${sleeve !== '_no_sleeve_' ? ` (${sleeve})` : ''} — ${size}`, 'error')
                             hasError = true
                         }
                     }
