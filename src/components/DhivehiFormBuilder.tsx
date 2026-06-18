@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Form, FormField, FormFieldType, Json } from '@/types'
 import { Button } from '@/components/ui/button'
-import { Plus, GripVertical, Trash2, CheckCircle2, Eye, Save, Globe, Settings, Loader2, ChevronLeft, X, Image as ImageIcon, Upload, Share2, Copy, Calendar } from 'lucide-react'
+import { Plus, GripVertical, Trash2, CheckCircle2, Eye, Save, Globe, Settings, Loader2, ChevronLeft, X, Image as ImageIcon, Upload, Share2, Copy, Calendar, LayoutTemplate } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -19,7 +19,7 @@ import { uploadFile } from '@/actions/files'
 import { validateFile } from '@/lib/fileUpload'
 import { safeGetSettings } from '@/lib/formUtils'
 import { latinToThaana } from '@/lib/thaana'
-import { togglePublish, updateFormSettings } from '@/actions/forms'
+import { saveFormAsTemplate, togglePublish, updateFormSettings } from '@/actions/forms'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import {
@@ -505,6 +505,9 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
     const [isToolboxOpen, setIsToolboxOpen] = useState(false)
     const [isShareOpen, setIsShareOpen] = useState(false)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
+    const [isSavingTemplate, setIsSavingTemplate] = useState(false)
+    const [templateName, setTemplateName] = useState(initialForm.title)
     const [lastSaved, setLastSaved] = useState<Date | null>(null)
     const router = useRouter()
     const { confirm, dialog } = useConfirmDialog()
@@ -654,6 +657,29 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
 
     const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/f/${form.slug}` : ''
 
+    const handleSaveTemplate = async () => {
+        const name = templateName.trim()
+        if (!name) {
+            addToast('Please enter a template name', 'error')
+            return
+        }
+
+        setIsSavingTemplate(true)
+        try {
+            const result = await saveFormAsTemplate(form.id, name)
+            if (result?.error) {
+                addToast(result.error, 'error')
+                return
+            }
+            addToast('Template saved successfully', 'success')
+            setIsTemplateDialogOpen(false)
+        } catch (error) {
+            addToast('Failed to save template', 'error')
+        } finally {
+            setIsSavingTemplate(false)
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-900 pb-20 pr-2 pl-2">
             {/* Sticky Header */}
@@ -661,8 +687,9 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                 <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between" dir="rtl">
                         <div className="flex items-center gap-4">
-                            <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
+                            <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
                                 <ChevronLeft className="h-5 w-5 rotate-180" /> {/* Rotated for RTL */}
+                                <span className="hidden sm:inline">Dashboard</span>
                             </Link>
                             <div className="h-6 w-px bg-white/10" />
                             <div className="flex items-center gap-2 text-sm text-gray-400 font-faruma">
@@ -692,7 +719,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                                         addToast('Please add at least one field to the form before previewing', 'error')
                                         return
                                     }
-                                    window.open(`/f/${form.slug}`, '_blank')
+                                    window.open(`/f/${form.slug}?preview=1`, '_blank')
                                 }}
                             >
                                 <Eye className="h-4 w-4 sm:ml-2" />
@@ -707,6 +734,19 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                             >
                                 <Settings className="h-4 w-4 sm:ml-2" />
                                 <span className="hidden sm:inline">ސެޓިންގްސް</span>
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-gray-400 hover:text-primary font-inter"
+                                onClick={() => {
+                                    setTemplateName(form.title)
+                                    setIsTemplateDialogOpen(true)
+                                }}
+                            >
+                                <LayoutTemplate className="h-4 w-4 sm:ml-2" />
+                                <span className="hidden sm:inline">Save Template</span>
                             </Button>
 
                             <Button
@@ -1072,6 +1112,60 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Save Template Dialog */}
+            <Dialog open={isTemplateDialogOpen} onClose={() => { if (!isSavingTemplate) setIsTemplateDialogOpen(false) }}>
+                <DialogContent className="sm:max-w-md bg-gray-900 border-white/10 text-white">
+                    <DialogHeader onClose={() => { if (!isSavingTemplate) setIsTemplateDialogOpen(false) }}>
+                        <DialogTitle>Save as Template</DialogTitle>
+                        <DialogDescription className="text-gray-400">
+                            Name this reusable template. The current form title and fields will be saved as the template defaults.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                        <div>
+                            <label htmlFor="template-name-dv" className="block text-sm font-medium text-white mb-2">
+                                Template Name
+                            </label>
+                            <input
+                                id="template-name-dv"
+                                type="text"
+                                value={templateName}
+                                onChange={(e) => setTemplateName(e.target.value)}
+                                placeholder="e.g. Event Registration Template"
+                                disabled={isSavingTemplate}
+                                className="block w-full rounded-md bg-white/5 px-3 py-2 text-sm text-white border border-white/10 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setIsTemplateDialogOpen(false)}
+                                disabled={isSavingTemplate}
+                                className="text-gray-300 hover:text-white"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={handleSaveTemplate}
+                                disabled={isSavingTemplate}
+                            >
+                                {isSavingTemplate ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    'Save Template'
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* Mobile Toolbox FAB */}
             <button
                 onClick={() => setIsToolboxOpen(true)}

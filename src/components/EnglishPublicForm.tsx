@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Form, FormField } from '@/types'
 import { submitResponse } from '@/actions/responses'
-import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Copy } from 'lucide-react'
+import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Copy, Eye } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, getFileIcon, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
@@ -12,7 +12,7 @@ import { latinToThaana } from '@/lib/thaana'
 import PublicLogoHeader from '@/components/PublicLogoHeader'
 
 
-export default function EnglishPublicForm({ form, fields, className }: { form: Form, fields: FormField[], className?: string }) {
+export default function EnglishPublicForm({ form, fields, className, isPreview = false }: { form: Form, fields: FormField[], className?: string, isPreview?: boolean }) {
     const displayTitle = form.title
     const displayDesc = form.description
 
@@ -53,6 +53,11 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (isPreview) {
+            addToast('Preview mode: responses are not submitted.', 'info')
+            return
+        }
 
         // Basic Validation
         let hasError = false
@@ -219,7 +224,7 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
         }
     }
 
-    const isFormClosed = !form.is_accepting_responses || (form.closes_at && new Date() > new Date(form.closes_at))
+    const isFormClosed = !isPreview && (!form.is_accepting_responses || (form.closes_at && new Date() > new Date(form.closes_at)))
 
     if (isFormClosed) {
         return (
@@ -278,6 +283,12 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
 
             {/* Header with Logo */}
             <PublicLogoHeader />
+
+            {isPreview && (
+                <div className="rounded-lg border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-primary-100">
+                    Preview mode. This form is not public here and responses will not be submitted.
+                </div>
+            )}
 
             {/* Form Header */}
             <div className="border-b border-white/10 pb-12 pr-2 pl-2">
@@ -782,11 +793,10 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                                                                 }))
                                                                                             }
                                                                                         }}
-                                                                                        className={`px-4 py-1.5 rounded-md text-sm font-bold border transition-all ${
-                                                                                            isActive
+                                                                                        className={`px-4 py-1.5 rounded-md text-sm font-bold border transition-all ${isActive
                                                                                                 ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
                                                                                                 : 'bg-white/5 text-gray-400 border-white/15 hover:border-white/30 hover:text-gray-200'
-                                                                                        }`}
+                                                                                            }`}
                                                                                     >
                                                                                         {sleeve === 'LS' ? '🧥 Long Sleeve' : '👕 Short Sleeve'}
                                                                                     </button>
@@ -863,11 +873,10 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                                                                                                         }))
                                                                                                     }
                                                                                                 }}
-                                                                                                className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${
-                                                                                                    isSizeSelected
+                                                                                                className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${isSizeSelected
                                                                                                         ? 'bg-primary/20 text-primary border-primary/50 shadow-sm'
                                                                                                         : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/25 hover:text-gray-300'
-                                                                                                }`}
+                                                                                                    }`}
                                                                                             >
                                                                                                 {size}
                                                                                             </button>
@@ -1114,13 +1123,18 @@ export default function EnglishPublicForm({ form, fields, className }: { form: F
                 </button>
                 <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isPreview}
                     className="flex-1 sm:flex-none rounded-md bg-primary px-6 py-2.5 text-md font-semibold text-gray-300 shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center"
                 >
                     {isSubmitting ? (
                         <span className="flex items-center gap-2">
                             <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             Submitting...
+                        </span>
+                    ) : isPreview ? (
+                        <span className="flex items-center gap-2">
+                            <Eye className="h-4 w-4" />
+                            Preview only
                         </span>
                     ) : (
                         <span className="flex items-center gap-2 ">

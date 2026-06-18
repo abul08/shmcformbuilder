@@ -8,9 +8,10 @@ interface DialogProps {
   open: boolean
   onClose: () => void
   children: React.ReactNode
+  className?: string
 }
 
-export function Dialog({ open, onClose, children }: DialogProps) {
+export function Dialog({ open, onClose, children, className }: DialogProps) {
 
   React.useEffect(() => {
     if (open) {
@@ -39,7 +40,10 @@ export function Dialog({ open, onClose, children }: DialogProps) {
         onClick={onClose}
       >
         <div
-          className="relative max-w-lg transform overflow-hidden rounded-lg bg-gray-800 text-left shadow-2xl ring-1 ring-white/10 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+          className={cn(
+            "relative w-full transform overflow-hidden rounded-lg bg-gray-800 text-left shadow-2xl ring-1 ring-white/10 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300",
+            className || "max-w-lg"
+          )}
           onClick={(e) => e.stopPropagation()}
         >
           {children}

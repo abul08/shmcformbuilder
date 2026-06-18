@@ -1,14 +1,21 @@
 'use client'
 
 import { Form } from '@/types'
-import { Edit2, Trash2, ExternalLink, MessageSquare, Loader2, LayoutTemplate } from 'lucide-react'
+import { Edit2, Trash2, ExternalLink, MessageSquare, Loader2, LayoutTemplate, FolderPlus, Folder, X } from 'lucide-react'
 import Link from 'next/link'
-import { deleteForm, saveFormAsTemplate } from '@/actions/forms'
+import { createFormFolder, deleteForm, saveFormAsTemplate, updateFormFolder } from '@/actions/forms'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 import AssignFormModal from '@/components/AssignFormModal'
 import { UserCog } from 'lucide-react'
@@ -16,6 +23,13 @@ import { UserCog } from 'lucide-react'
 export default function FormList({ initialForms, isSuperUser = false }: { initialForms: Form[], isSuperUser?: boolean }) {
   const [forms, setForms] = useState(initialForms)
   const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null)
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false)
+  const [selectedFolderFormIds, setSelectedFolderFormIds] = useState<string[]>([])
+  const [openFolderName, setOpenFolderName] = useState<string | null>(null)
+  const [movingFormId, setMovingFormId] = useState<string | null>(null)
+  const [draggingFormId, setDraggingFormId] = useState<string | null>(null)
+  const [dragOverFolderName, setDragOverFolderName] = useState<string | null>(null)
+  const [creatingFolder, setCreatingFolder] = useState(false)
   const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [selectedForm, setSelectedForm] = useState<{ id: string, title: string } | null>(null)
   const router = useRouter()
@@ -26,6 +40,113 @@ export default function FormList({ initialForms, isSuperUser = false }: { initia
   useEffect(() => {
     setForms(initialForms)
   }, [initialForms])
+
+  const folderNames = Array.from(new Set(forms.map((form) => ((form.settings as any) || {}).folder_name).filter(Boolean))).sort()
+  const formsByFolder = forms.reduce((groups: Record<string, Form[]>, form) => {
+    const folderName = ((form.settings as any) || {}).folder_name || 'Unfiled'
+    groups[folderName] = groups[folderName] || []
+    groups[folderName].push(form)
+    return groups
+  }, {})
+  const realFolderNames = folderNames
+  const unfiledForms = formsByFolder.Unfiled || []
+  const openFolderForms = openFolderName ? formsByFolder[openFolderName] || [] : []
+
+  const toggleSelectedFolderForm = (formId: string) => {
+    setSelectedFolderFormIds(prev =>
+      prev.includes(formId)
+        ? prev.filter(id => id !== formId)
+        : [...prev, formId]
+    )
+  }
+
+  const handleCreateFolder = async (formData: FormData) => {
+    const folderName = (formData.get('folderName') as string || '').trim()
+    selectedFolderFormIds.forEach(id => formData.append('formIds', id))
+
+    setCreatingFolder(true)
+    try {
+      const result = await createFormFolder(formData)
+      if (result?.error) {
+        addToast(result.error, 'error')
+        return
+      }
+
+      addToast('Folder created successfully', 'success')
+      setForms(prev => prev.map(form => {
+        if (!selectedFolderFormIds.includes(form.id)) return form
+        const settings = {
+          ...((form.settings as any) || {}),
+          folder_name: folderName,
+        }
+        return { ...form, settings }
+      }))
+      setSelectedFolderFormIds([])
+      setIsFolderDialogOpen(false)
+      router.refresh()
+    } catch (error) {
+      addToast('Failed to create folder', 'error')
+    } finally {
+      setCreatingFolder(false)
+    }
+  }
+
+  const handleMoveForm = async (formId: string, folderName: string) => {
+    setMovingFormId(formId)
+    try {
+      const result = await updateFormFolder(formId, folderName === '__none__' ? null : folderName)
+      if (result?.error) {
+        addToast(result.error, 'error')
+        return
+      }
+
+      setForms(prev => prev.map(form => {
+        if (form.id !== formId) return form
+        const settings = { ...(((form.settings as any) || {})) }
+        if (folderName === '__none__') {
+          delete settings.folder_name
+        } else {
+          settings.folder_name = folderName
+        }
+        return { ...form, settings }
+      }))
+      addToast('Form moved', 'success')
+      router.refresh()
+    } catch (error) {
+      addToast('Failed to move form', 'error')
+    } finally {
+      setMovingFormId(null)
+    }
+  }
+
+  const handleDragStart = (formId: string, event: React.DragEvent<HTMLDivElement>) => {
+    setDraggingFormId(formId)
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', formId)
+  }
+
+  const handleDragEnd = () => {
+    setDraggingFormId(null)
+    setDragOverFolderName(null)
+  }
+
+  const handleFolderDrop = (folderName: string, event: React.DragEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const formId = event.dataTransfer.getData('text/plain') || draggingFormId
+    setDraggingFormId(null)
+    setDragOverFolderName(null)
+
+    if (!formId) return
+
+    const form = forms.find((item) => item.id === formId)
+    const currentFolder = ((form?.settings as any) || {}).folder_name
+
+    if (currentFolder === folderName) return
+
+    handleMoveForm(formId, folderName)
+  }
 
   const handleDelete = async (formId: string) => {
     const confirmed = await confirm({
@@ -92,7 +213,7 @@ export default function FormList({ initialForms, isSuperUser = false }: { initia
   const handleCardClick = (id: string, e: React.MouseEvent) => {
     // Only navigate if the click wasn't on a button or link
     const target = e.target as HTMLElement
-    if (target.closest('button') || target.closest('a')) {
+    if (target.closest('button') || target.closest('a') || target.closest('select')) {
       return
     }
     router.push(`/forms/${id}/edit`)
@@ -100,8 +221,88 @@ export default function FormList({ initialForms, isSuperUser = false }: { initia
 
   return (
     <>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {forms.map((form) => {
+      <div className="space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-300 flex items-center gap-2">
+              <Folder className="h-5 w-5 text-primary" />
+              Folders
+            </h2>
+            <p className="text-sm text-gray-500">Create folders and organize your forms the way you prefer.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsFolderDialogOpen(true)}
+            className="w-full sm:w-auto rounded-md bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors flex items-center justify-center gap-2 border border-white/10"
+          >
+            <FolderPlus className="h-4 w-4" />
+            Create Folder
+          </button>
+        </div>
+
+        {realFolderNames.length > 0 && (
+          <section className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {realFolderNames.map((folderName) => (
+                <button
+                  key={folderName}
+                  type="button"
+                  onClick={() => setOpenFolderName(folderName)}
+                  onDragOver={(event) => {
+                    if (!draggingFormId) return
+                    event.preventDefault()
+                    event.dataTransfer.dropEffect = 'move'
+                  }}
+                  onDragEnter={() => {
+                    if (draggingFormId) setDragOverFolderName(folderName)
+                  }}
+                  onDragLeave={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                      setDragOverFolderName(null)
+                    }
+                  }}
+                  onDrop={(event) => handleFolderDrop(folderName, event)}
+                  className={`group flex min-h-36 flex-col justify-between rounded-xl bg-gray-800/40 border transition-all duration-300 p-5 text-left shadow-sm hover:shadow-md hover:shadow-primary/5 ${
+                    dragOverFolderName === folderName
+                      ? 'border-primary/70 bg-primary/10 ring-2 ring-primary/30'
+                      : 'border-white/5 hover:border-primary/30 hover:bg-gray-800/60'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="rounded-lg bg-primary/10 p-3 text-primary">
+                      <Folder className="h-6 w-6" />
+                    </div>
+                    <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium text-gray-400">
+                      {formsByFolder[folderName]?.length || 0} form{(formsByFolder[folderName]?.length || 0) === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="mt-5 line-clamp-2 text-base font-semibold text-white group-hover:text-primary transition-colors">
+                      {folderName}
+                    </h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {dragOverFolderName === folderName ? 'Drop form here' : 'Open folder'}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {unfiledForms.length > 0 && (
+          <section className="space-y-4">
+            {realFolderNames.length > 0 && (
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div>
+                  <h3 className="text-base font-semibold text-white">Forms</h3>
+                  <p className="text-xs text-gray-500">Drag a form card onto a folder to move it.</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {unfiledForms.map((form) => {
           const isDhivehiTitle = /[\u0780-\u07BF]/.test(form.title || '');
           const titleClass = isDhivehiTitle ? 'font-waheed text-right text-xl leading-relaxed' : 'text-lg font-inter font-semibold text-left';
 
@@ -116,8 +317,13 @@ export default function FormList({ initialForms, isSuperUser = false }: { initia
           return (
             <div
               key={form.id}
+              draggable={realFolderNames.length > 0}
+              onDragStart={(event) => handleDragStart(form.id, event)}
+              onDragEnd={handleDragEnd}
               onClick={(e) => handleCardClick(form.id, e)}
-              className="group relative flex flex-col justify-between rounded-xl bg-gray-800/40 border border-white/5 hover:border-white/10 hover:bg-gray-800/60 transition-all duration-300 cursor-pointer overflow-hidden shadow-sm hover:shadow-md hover:shadow-primary/5"
+              className={`group relative flex flex-col justify-between rounded-xl bg-gray-800/40 border border-white/5 hover:border-white/10 hover:bg-gray-800/60 transition-all duration-300 cursor-pointer overflow-hidden shadow-sm hover:shadow-md hover:shadow-primary/5 ${
+                draggingFormId === form.id ? 'opacity-60 ring-2 ring-primary/30' : ''
+              }`}
             >
               {/* Card Content */}
               <div className="p-6 flex-grow flex flex-col">
@@ -237,7 +443,10 @@ export default function FormList({ initialForms, isSuperUser = false }: { initia
               </div>
             </div>
           )
-        })}
+              })}
+            </div>
+          </section>
+        )}
         {dialog}
       </div>
 
@@ -249,6 +458,187 @@ export default function FormList({ initialForms, isSuperUser = false }: { initia
           formTitle={selectedForm.title}
         />
       )}
+
+      <Dialog open={!!openFolderName} onClose={() => setOpenFolderName(null)} className="max-w-4xl">
+        <DialogContent className="bg-gray-900 border-white/10 text-white p-0">
+          <DialogHeader onClose={() => setOpenFolderName(null)} className="bg-white/[0.03] px-5 py-4 sm:px-6">
+            <DialogTitle className="flex min-w-0 items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Folder className="h-5 w-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-base sm:text-lg">{openFolderName || 'Folder'}</span>
+                <span className="mt-0.5 block text-xs font-normal text-gray-500">
+                  {openFolderForms.length} form{openFolderForms.length === 1 ? '' : 's'}
+                </span>
+              </span>
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Forms saved inside this folder.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-[70vh] overflow-y-auto px-5 py-5 sm:px-6">
+            {openFolderForms.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-white/15 bg-white/[0.02] px-6 py-14 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-white/5 text-gray-500">
+                  <Folder className="h-7 w-7" />
+                </div>
+                <p className="mt-4 text-sm font-medium text-white">This folder is empty</p>
+                <p className="mt-1 text-xs text-gray-500">Drag forms from the dashboard onto this folder.</p>
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-lg border border-white/10">
+                {openFolderForms.map((form) => {
+                  const responseCount = (form as any).form_responses?.[0]?.count || 0
+
+                  return (
+                    <div
+                      key={form.id}
+                      className="border-b border-white/10 bg-white/[0.025] p-4 last:border-b-0 hover:bg-white/[0.045] transition-colors"
+                    >
+                      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <h3 className="min-w-0 truncate text-sm font-semibold text-white" dir="auto">
+                              {form.title}
+                            </h3>
+                            <Badge variant={form.is_published ? 'success' : 'secondary'} className="shrink-0 shadow-none">
+                              {form.is_published ? 'Live' : 'Draft'}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-sm text-gray-400" dir="auto">
+                            {form.description || 'No description provided'}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                            <span className="flex items-center gap-1.5">
+                              <Edit2 className="h-3 w-3" />
+                              Updated {new Date(form.updated_at).toLocaleDateString()}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <MessageSquare className="h-3 w-3" />
+                              {responseCount} response{responseCount === 1 ? '' : 's'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
+                          <Link
+                            href={`/forms/${form.id}/edit`}
+                            className="inline-flex items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                            title="Edit Form"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            Edit
+                          </Link>
+                          <Link
+                            href={`/forms/${form.id}/responses`}
+                            className="inline-flex items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                            title="View Responses"
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Responses
+                          </Link>
+                          {form.is_published && (
+                            <Link
+                              href={`/f/${form.slug}`}
+                              target="_blank"
+                              className="inline-flex items-center justify-center rounded-md border border-primary/20 bg-primary/10 p-2 text-primary transition-colors hover:bg-primary/20 hover:text-primary-300"
+                              title="View Public Form"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Link>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleMoveForm(form.id, '__none__')}
+                            disabled={movingFormId === form.id}
+                            className="inline-flex items-center justify-center gap-2 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-200 transition-colors hover:bg-red-500/20 hover:text-red-100 disabled:opacity-50"
+                          >
+                            {movingFormId === form.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <X className="h-3.5 w-3.5" />
+                            )}
+                            Remove from folder
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isFolderDialogOpen} onClose={() => { if (!creatingFolder) setIsFolderDialogOpen(false) }} className="max-w-2xl">
+        <DialogContent className="bg-gray-900 border-white/10 text-white">
+          <DialogHeader onClose={() => { if (!creatingFolder) setIsFolderDialogOpen(false) }}>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderPlus className="h-5 w-5 text-primary" />
+              Create Folder
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Name the folder and select the forms you want to add.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form action={handleCreateFolder} className="space-y-5 mt-4">
+            <div>
+              <label htmlFor="folder-name" className="block text-sm font-medium text-white mb-2">
+                Folder Name
+              </label>
+              <input
+                id="folder-name"
+                name="folderName"
+                required
+                placeholder="e.g. Registration Forms"
+                disabled={creatingFolder}
+                className="block w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-white">Forms</label>
+                <span className="text-xs text-gray-500">{selectedFolderFormIds.length} selected</span>
+              </div>
+              <div className="max-h-72 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5">
+                {forms.map((form) => {
+                  const settings = (form.settings as any) || {}
+                  return (
+                    <label key={form.id} className="flex items-start gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedFolderFormIds.includes(form.id)}
+                        onChange={() => toggleSelectedFolderForm(form.id)}
+                        disabled={creatingFolder}
+                        className="mt-1"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-white truncate">{form.title}</span>
+                        <span className="block text-xs text-gray-400 truncate">
+                          {settings.folder_name ? `Currently in ${settings.folder_name}` : 'Unfiled'}
+                        </span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={creatingFolder}
+              className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors disabled:opacity-50"
+            >
+              {creatingFolder ? 'Creating...' : 'Create Folder'}
+            </button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

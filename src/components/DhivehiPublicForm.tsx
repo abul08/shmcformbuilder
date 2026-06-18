@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Form, FormField } from '@/types'
 import { submitResponse } from '@/actions/responses'
-import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Calendar, Copy } from 'lucide-react'
+import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Calendar, Copy, Eye } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, getFileIcon, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
@@ -11,7 +11,7 @@ import { uploadFile } from '@/actions/files'
 import { latinToThaana } from '@/lib/thaana'
 import PublicLogoHeader from '@/components/PublicLogoHeader'
 
-export default function DhivehiPublicForm({ form, fields, className }: { form: Form, fields: FormField[], className?: string }) {
+export default function DhivehiPublicForm({ form, fields, className, isPreview = false }: { form: Form, fields: FormField[], className?: string, isPreview?: boolean }) {
     const displayTitle = form.title
     const displayDesc = form.description
 
@@ -46,6 +46,11 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (isPreview) {
+            addToast('Preview mode: responses are not submitted.', 'info', 'font-waheed')
+            return
+        }
 
         // Basic Validation
         let hasError = false
@@ -158,7 +163,7 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
         }
     }
 
-    const isFormClosed = !form.is_accepting_responses || (form.closes_at && new Date() > new Date(form.closes_at))
+    const isFormClosed = !isPreview && (!form.is_accepting_responses || (form.closes_at && new Date() > new Date(form.closes_at)))
 
     if (isFormClosed) {
         return (
@@ -217,6 +222,12 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
 
             {/* Header with Logo */}
             <PublicLogoHeader />
+
+            {isPreview && (
+                <div className="rounded-lg border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-primary-100 font-faruma">
+                    ޕްރިވިއުވް މޯޑް. މި ފޯމް އަދި ޕަބްލިކް ނޫން. މި ރެސްޕޮންސްތައް ސޭވް ނުކުރެވޭ.
+                </div>
+            )}
 
             {/* Form Header */}
             <div className="border-b border-white/10 pb-12 text-right">
@@ -642,13 +653,18 @@ export default function DhivehiPublicForm({ form, fields, className }: { form: F
             <div className="flex items-center gap-4 pt-6" dir="rtl">
                 <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isPreview}
                     className="flex-1 w-full rounded-md bg-primary px-6 py-2 text-lg text-white shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex justify-center font-waheed"
                 >
                     {isSubmitting ? (
                         <span className="flex items-center gap-2">
                             <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ފޮނުވެނީ...
+                        </span>
+                    ) : isPreview ? (
+                        <span className="flex items-center gap-2">
+                            <Eye className="h-4 w-4" />
+                            Preview only
                         </span>
                     ) : (
                         <span className="flex items-center gap-2">

@@ -171,7 +171,7 @@ export async function duplicateForm(id: string) {
   revalidatePath('/dashboard')
 }
 
-export async function saveFormAsTemplate(id: string) {
+export async function saveFormAsTemplate(id: string, templateName?: string) {
   const { supabase, user, client } = await getCurrentUserContext()
 
   if (!user) return { error: 'Unauthorized' }
@@ -190,9 +190,13 @@ export async function saveFormAsTemplate(id: string) {
     return { error: 'This form is already a saved template.' }
   }
 
+  const name = templateName?.trim() || form.title
+
   const settings = {
     ...(form.settings || {}),
     is_template: true,
+    template_form_title: form.title,
+    template_form_description: form.description,
     template_source_form_id: form.id,
     template_saved_at: new Date().toISOString(),
     template_created_by: user.id,
@@ -202,7 +206,7 @@ export async function saveFormAsTemplate(id: string) {
     .from('forms')
     .insert({
       user_id: user.id,
-      title: form.title,
+      title: name,
       description: form.description,
       slug: createSlug(),
       is_published: false,
@@ -282,13 +286,100 @@ export async function getSavedFormTemplates(): Promise<{ templates?: FormTemplat
       createdAt: form.created_at,
       fields,
       formDefaults: {
-        title: form.title,
-        description: form.description || '',
+        title: settings.template_form_title || form.title,
+        description: settings.template_form_description || form.description || '',
       },
     }
   })
 
   return { templates }
+}
+
+export async function createFormFolder(formData: FormData) {
+  const { user, client, isSuperUser } = await getCurrentUserContext()
+
+  if (!user) return { error: 'Unauthorized' }
+
+  const folderName = (formData.get('folderName') as string || '').trim()
+  const formIds = formData.getAll('formIds').map(String).filter(Boolean)
+
+  if (!folderName) return { error: 'Folder name is required' }
+  if (formIds.length === 0) return { error: 'Select at least one form' }
+
+  let query = client
+    .from('forms')
+    .select('id, user_id, settings')
+    .in('id', formIds)
+
+  if (!isSuperUser) {
+    query = query.eq('user_id', user.id)
+  }
+
+  const { data: forms, error: fetchError } = await query
+
+  if (fetchError) return { error: fetchError.message }
+  if (!forms || forms.length !== formIds.length) {
+    return { error: 'Some selected forms could not be found or are not yours.' }
+  }
+
+  const updates = forms.map((form: any) => {
+    const settings = {
+      ...(form.settings || {}),
+      folder_name: folderName,
+    }
+
+    return client
+      .from('forms')
+      .update({ settings })
+      .eq('id', form.id)
+  })
+
+  const results = await Promise.all(updates)
+  const failed = results.find((result) => result.error)
+  if (failed?.error) return { error: failed.error.message }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function updateFormFolder(formId: string, folderName: string | null) {
+  const { user, client, isSuperUser } = await getCurrentUserContext()
+
+  if (!user) return { error: 'Unauthorized' }
+
+  let query = client
+    .from('forms')
+    .select('id, user_id, settings')
+    .eq('id', formId)
+
+  if (!isSuperUser) {
+    query = query.eq('user_id', user.id)
+  }
+
+  const { data: form, error: fetchError } = await query.single()
+
+  if (fetchError || !form) {
+    return { error: fetchError?.message || 'Form not found' }
+  }
+
+  const settings = { ...((form as any).settings || {}) }
+  const nextName = folderName?.trim()
+
+  if (nextName) {
+    settings.folder_name = nextName
+  } else {
+    delete settings.folder_name
+  }
+
+  const { error } = await client
+    .from('forms')
+    .update({ settings })
+    .eq('id', formId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard')
+  return { success: true }
 }
 
 export async function createFormFromTemplate(templateId: string, language: 'en' | 'dv' = 'en') {
@@ -318,8 +409,8 @@ export async function createFormFromTemplate(templateId: string, language: 'en' 
       .from('forms')
       .insert({
         user_id: user.id,
-        title: savedTemplate.title,
-        description: savedTemplate.description,
+        title: savedTemplate.settings?.template_form_title || savedTemplate.title,
+        description: savedTemplate.settings?.template_form_description || savedTemplate.description,
         slug,
         is_published: false,
         is_accepting_responses: true,

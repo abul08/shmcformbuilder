@@ -6,8 +6,16 @@ import { Form, FormField } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
-export default async function DhivehiPublicFormPage({ params }: { params: { slug: string } }) {
+export default async function DhivehiPublicFormPage({
+    params,
+    searchParams,
+}: {
+    params: { slug: string },
+    searchParams?: { preview?: string },
+}) {
     const { slug } = await params
+    const query = await searchParams
+    const isPreview = query?.preview === '1'
     const supabase = await createClient()
 
     const { data: form, error } = await supabase
@@ -30,7 +38,7 @@ export default async function DhivehiPublicFormPage({ params }: { params: { slug
 
     const sortedFields = (form.form_fields || []).sort((a: any, b: any) => a.order_index - b.order_index)
 
-    const isClosed = !form.is_accepting_responses || (form.closes_at && new Date() > new Date(form.closes_at))
+    const isClosed = !isPreview && (!form.is_accepting_responses || (form.closes_at && new Date() > new Date(form.closes_at)))
 
     if (isClosed) {
         return (
@@ -55,6 +63,7 @@ export default async function DhivehiPublicFormPage({ params }: { params: { slug
                     <DhivehiPublicForm
                         form={form}
                         fields={sortedFields}
+                        isPreview={isPreview}
                         className="font-waheed text-right"
                     />
                 </ToastProvider>
