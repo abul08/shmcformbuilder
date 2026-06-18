@@ -556,27 +556,39 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
         }
     }
 
+    const createOptimisticField = (type: FormFieldType, orderIndex: number, options?: any): FormField => ({
+        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        form_id: form.id,
+        type,
+        label: `New ${type.replace('_', ' ')}`,
+        placeholder: null,
+        required: false,
+        options: options || null,
+        order_index: orderIndex,
+        created_at: new Date().toISOString(),
+    })
+
     const handleAddField = async (type: FormFieldType, options?: any) => {
+        const orderIndex = fields.length
+        const tempField = createOptimisticField(type, orderIndex, options)
         setIsSaving(true)
+        setFields(prev => [...prev, tempField])
+        setTimeout(() => {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+
         try {
-            const result = await addField(form.id, type, fields.length)
-            if (result.data) {
-                // Force is_rtl to true for new fields in Dhivehi builder
-                let newFieldRaw = result.data as FormField;
-
-                // If options provided (e.g. is_english_answer), apply them immediately
-                if (options) {
-                    await updateField(newFieldRaw.id, form.id, { options: { ...((newFieldRaw.options as any) || {}), ...options } })
-                    newFieldRaw = { ...newFieldRaw, options: { ...((newFieldRaw.options as any) || {}), ...options } }
-                }
-
-                setFields([...fields, newFieldRaw])
-                setLastSaved(new Date())
-                setTimeout(() => {
-                    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-                }, 100)
+            const result = await addField(form.id, type, orderIndex, options || null)
+            if (result.error) {
+                throw new Error(result.error)
             }
+            if (!result.data) {
+                throw new Error('No field returned')
+            }
+            setFields(prev => prev.map(field => field.id === tempField.id ? result.data as FormField : field))
+            setLastSaved(new Date())
         } catch (error) {
+            setFields(prev => prev.filter(field => field.id !== tempField.id))
             addToast('Failed to add field', 'error')
         } finally {
             setIsSaving(false)

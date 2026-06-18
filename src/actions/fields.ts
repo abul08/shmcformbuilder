@@ -30,7 +30,7 @@ async function getSupabaseClient() {
   return { client: supabase, user, isSuperUser: false }
 }
 
-export async function addField(formId: string, type: FormFieldType, orderIndex: number) {
+export async function addField(formId: string, type: FormFieldType, orderIndex: number, options?: Json | null) {
   const { client, user } = await getSupabaseClient()
 
   if (!user) return { error: 'Unauthorized' }
@@ -43,13 +43,13 @@ export async function addField(formId: string, type: FormFieldType, orderIndex: 
       label: `New ${type.replace('_', ' ')}`,
       order_index: orderIndex,
       required: false,
+      options: options ?? null,
     })
     .select()
     .single()
 
   if (error) return { error: error.message }
 
-  revalidatePath(`/forms/${formId}/edit`)
   return { data }
 }
 
@@ -64,8 +64,6 @@ export async function updateField(id: string, formId: string, updates: Partial<F
     .eq('id', id)
 
   if (error) return { error: error.message }
-
-  revalidatePath(`/forms/${formId}/edit`)
 }
 
 export async function deleteField(id: string, formId: string) {
@@ -79,8 +77,6 @@ export async function deleteField(id: string, formId: string) {
     .eq('id', id)
 
   if (error) return { error: error.message }
-
-  revalidatePath(`/forms/${formId}/edit`)
 }
 
 export async function reorderFields(formId: string, fieldIds: string[]) {
@@ -96,14 +92,12 @@ export async function reorderFields(formId: string, fieldIds: string[]) {
   // Supabase doesn't support bulk update with different values easily in one call via .update()
   // but we can use a RPC or just multiple calls for now. For simplicity, multiple calls.
   // In a real app, a single RPC would be better.
-  for (const update of updates) {
-    await client
+  await Promise.all(updates.map((update) =>
+    client
       .from('form_fields')
       .update({ order_index: update.order_index })
       .eq('id', update.id)
-  }
-
-  revalidatePath(`/forms/${formId}/edit`)
+  ))
 }
 
 export async function updateFormDetails(id: string, updates: { title?: string, description?: string | null, settings?: Json }, slug?: string) {

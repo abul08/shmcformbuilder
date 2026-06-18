@@ -663,18 +663,39 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
         }
     }
 
+    const createOptimisticField = (type: FormFieldType, orderIndex: number): FormField => ({
+        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        form_id: form.id,
+        type,
+        label: `New ${type.replace('_', ' ')}`,
+        placeholder: null,
+        required: false,
+        options: null,
+        order_index: orderIndex,
+        created_at: new Date().toISOString(),
+    })
+
     const handleAddField = async (type: FormFieldType) => {
+        const orderIndex = fields.length
+        const tempField = createOptimisticField(type, orderIndex)
         setIsSaving(true)
+        setFields(prev => [...prev, tempField])
+        setTimeout(() => {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+
         try {
-            const result = await addField(form.id, type, fields.length)
-            if (result.data) {
-                setFields([...fields, result.data as FormField])
-                setLastSaved(new Date())
-                setTimeout(() => {
-                    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-                }, 100)
+            const result = await addField(form.id, type, orderIndex)
+            if (result.error) {
+                throw new Error(result.error)
             }
+            if (!result.data) {
+                throw new Error('No field returned')
+            }
+            setFields(prev => prev.map(field => field.id === tempField.id ? result.data as FormField : field))
+            setLastSaved(new Date())
         } catch (error) {
+            setFields(prev => prev.filter(field => field.id !== tempField.id))
             addToast('Failed to add field', 'error')
         } finally {
             setIsSaving(false)
