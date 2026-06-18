@@ -3,9 +3,48 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { Form } from '@/types'
-import { getTemplateById } from '@/lib/formTemplates'
+import { FormTemplate, getTemplateById } from '@/lib/formTemplates'
+
+function createSlug() {
+  return Math.random().toString(36).substring(2, 10)
+}
+
+function isTemplateSettings(settings: any) {
+  return settings?.is_template === true || settings?.is_template === 'true'
+}
+
+function cleanTemplateSettings(settings: any, language?: 'en' | 'dv') {
+  const next = { ...(settings || {}) }
+  delete next.is_template
+  delete next.template_source_form_id
+  delete next.template_saved_at
+  delete next.template_created_by
+
+  return {
+    ...next,
+    language: language || next.language || 'en',
+  }
+}
+
+async function getCurrentUserContext() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { supabase, user: null, isSuperUser: false, client: supabase }
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isSuperUser = profile?.role === 'SUPER_USER'
+  const client = isSuperUser ? await createAdminClient() : supabase
+
+  return { supabase, user, isSuperUser, client }
+}
 
 export async function createForm(formData: FormData) {
   const supabase = await createClient()
@@ -17,7 +56,7 @@ export async function createForm(formData: FormData) {
 
   const title = formData.get('title') as string || 'Untitled Form'
   const language = formData.get('language') as string || 'en'
-  const slug = Math.random().toString(36).substring(2, 10)
+  const slug = createSlug()
 
   const { data, error } = await supabase
     .from('forms')
@@ -97,7 +136,7 @@ export async function duplicateForm(id: string) {
   if (formError) return { error: formError.message }
 
   // 2. Create new form
-  const newSlug = Math.random().toString(36).substring(2, 10)
+  const newSlug = createSlug()
   const { data: newForm, error: newFormError } = await supabase
     .from('forms')
     .insert({
@@ -132,29 +171,192 @@ export async function duplicateForm(id: string) {
   revalidatePath('/dashboard')
 }
 
+export async function saveFormAsTemplate(id: string) {
+  const { supabase, user, client } = await getCurrentUserContext()
+
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data: form, error: formError } = await client
+    .from('forms')
+    .select('*, form_fields(*)')
+    .eq('id', id)
+    .single()
+
+  if (formError || !form) {
+    return { error: formError?.message || 'Form not found' }
+  }
+
+  if (isTemplateSettings(form.settings)) {
+    return { error: 'This form is already a saved template.' }
+  }
+
+  const settings = {
+    ...(form.settings || {}),
+    is_template: true,
+    template_source_form_id: form.id,
+    template_saved_at: new Date().toISOString(),
+    template_created_by: user.id,
+  }
+
+  const { data: template, error: templateError } = await supabase
+    .from('forms')
+    .insert({
+      user_id: user.id,
+      title: form.title,
+      description: form.description,
+      slug: createSlug(),
+      is_published: false,
+      is_accepting_responses: false,
+      closes_at: null,
+      settings,
+    })
+    .select()
+    .single()
+
+  if (templateError) return { error: templateError.message }
+
+  if (form.form_fields && form.form_fields.length > 0) {
+    const fields = form.form_fields.map((field: any) => {
+      const { id, created_at, form_id, active, ...rest } = field
+      return {
+        ...rest,
+        form_id: template.id,
+      }
+    })
+
+    const { error: fieldsError } = await client
+      .from('form_fields')
+      .insert(fields)
+
+    if (fieldsError) {
+      await supabase.from('forms').delete().eq('id', template.id)
+      return { error: fieldsError.message }
+    }
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true, id: template.id }
+}
+
+export async function getSavedFormTemplates(): Promise<{ templates?: FormTemplate[], error?: string }> {
+  const { user, client, isSuperUser } = await getCurrentUserContext()
+
+  if (!user) return { error: 'Unauthorized' }
+
+  let query = client
+    .from('forms')
+    .select('id, user_id, title, description, settings, created_at, form_fields(*)')
+    .eq('settings->>is_template', 'true')
+    .order('created_at', { ascending: false })
+
+  if (!isSuperUser) {
+    query = query.eq('user_id', user.id)
+  }
+
+  const { data, error } = await query
+
+  if (error) return { error: error.message }
+
+  const templates: FormTemplate[] = (data || []).map((form: any) => {
+    const settings = form.settings || {}
+    const fields = [...(form.form_fields || [])]
+      .sort((a: any, b: any) => a.order_index - b.order_index)
+      .map((field: any) => ({
+        type: field.type,
+        label: field.label,
+        placeholder: field.placeholder,
+        required: field.required,
+        options: field.options,
+        order_index: field.order_index,
+      }))
+
+    return {
+      id: form.id,
+      source: 'saved',
+      name: form.title,
+      description: form.description || 'Saved from one of your forms.',
+      language: settings.language === 'dv' ? 'dv' : 'en',
+      emoji: '*',
+      category: 'Saved',
+      createdBy: form.user_id,
+      createdAt: form.created_at,
+      fields,
+      formDefaults: {
+        title: form.title,
+        description: form.description || '',
+      },
+    }
+  })
+
+  return { templates }
+}
+
 export async function createFormFromTemplate(templateId: string, language: 'en' | 'dv' = 'en') {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user, client } = await getCurrentUserContext()
 
   if (!user) {
     throw new Error('Unauthorized')
   }
 
-  // Check if user is Super User to pick the right client for field inserts
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-  const isSuperUser = profile?.role === 'SUPER_USER'
-  const client = isSuperUser ? await createAdminClient() : supabase
-
   const template = getTemplateById(templateId)
+  const slug = createSlug()
+
   if (!template) {
-    return { error: 'Template not found' }
+    const { data: savedTemplate, error: templateError } = await client
+      .from('forms')
+      .select('*, form_fields(*)')
+      .eq('id', templateId)
+      .single()
+
+    if (templateError || !savedTemplate || !isTemplateSettings(savedTemplate.settings)) {
+      return { error: templateError?.message || 'Template not found' }
+    }
+
+    const templateLanguage = savedTemplate.settings?.language === 'dv' ? 'dv' : language
+
+    const { data: newForm, error: formError } = await supabase
+      .from('forms')
+      .insert({
+        user_id: user.id,
+        title: savedTemplate.title,
+        description: savedTemplate.description,
+        slug,
+        is_published: false,
+        is_accepting_responses: true,
+        closes_at: null,
+        settings: cleanTemplateSettings(savedTemplate.settings, templateLanguage),
+      })
+      .select()
+      .single()
+
+    if (formError) {
+      return { error: formError.message }
+    }
+
+    if (savedTemplate.form_fields && savedTemplate.form_fields.length > 0) {
+      const fieldsToInsert = savedTemplate.form_fields.map((field: any) => {
+        const { id, created_at, form_id, active, ...rest } = field
+        return {
+          ...rest,
+          form_id: newForm.id,
+        }
+      })
+
+      const { error: fieldsError } = await client
+        .from('form_fields')
+        .insert(fieldsToInsert)
+
+      if (fieldsError) {
+        await supabase.from('forms').delete().eq('id', newForm.id)
+        return { error: fieldsError.message }
+      }
+    }
+
+    revalidatePath('/dashboard')
+    return { success: true, id: newForm.id }
   }
 
-  const slug = Math.random().toString(36).substring(2, 10)
+  const templateLanguage = template.language || language
 
   // 1. Create the form
   const { data: newForm, error: formError } = await supabase
@@ -165,7 +367,7 @@ export async function createFormFromTemplate(templateId: string, language: 'en' 
       description: template.formDefaults.description,
       slug,
       is_published: false,
-      settings: { language },
+      settings: { language: templateLanguage },
     })
     .select()
     .single()

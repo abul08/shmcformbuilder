@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Plus, LayoutDashboard, LogOut, Search, Filter, Shield } from 'lucide-react'
-import { createForm } from '@/actions/forms'
+import { getSavedFormTemplates } from '@/actions/forms'
 import { logout } from '@/actions/auth'
 import FormList from '@/components/FormList'
 import CreateFormButton from '@/components/CreateFormButton'
@@ -43,6 +43,11 @@ export default async function DashboardPage() {
   }
 
   const { data: forms, error } = await query
+  const { templates: savedTemplates = [] } = await getSavedFormTemplates()
+  const visibleForms = (forms || []).filter((form: any) => {
+    const settings = form.settings || {}
+    return settings.is_template !== true && settings.is_template !== 'true'
+  })
 
 
 
@@ -96,7 +101,7 @@ export default async function DashboardPage() {
               <p className="text-gray-600 mt-1">Create, manage and share your forms.</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <TemplatePickerButton />
+              <TemplatePickerButton savedTemplates={savedTemplates} />
               <CreateFormButton />
             </div>
           </div>
@@ -134,7 +139,7 @@ export default async function DashboardPage() {
                 </a>
               </div>
             ) : (
-              <FormList initialForms={forms || []} isSuperUser={isSuperUser} />
+              <FormList initialForms={visibleForms} isSuperUser={isSuperUser} />
             )}
           </div>
         </div>

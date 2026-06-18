@@ -1,9 +1,9 @@
 'use client'
 
 import { Form } from '@/types'
-import { Edit2, Trash2, Copy, ExternalLink, MessageSquare, Loader2 } from 'lucide-react'
+import { Edit2, Trash2, ExternalLink, MessageSquare, Loader2, LayoutTemplate } from 'lucide-react'
 import Link from 'next/link'
-import { deleteForm, duplicateForm } from '@/actions/forms'
+import { deleteForm, saveFormAsTemplate } from '@/actions/forms'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -15,7 +15,7 @@ import { UserCog } from 'lucide-react'
 
 export default function FormList({ initialForms, isSuperUser = false }: { initialForms: Form[], isSuperUser?: boolean }) {
   const [forms, setForms] = useState(initialForms)
-  const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
+  const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null)
   const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [selectedForm, setSelectedForm] = useState<{ id: string, title: string } | null>(null)
   const router = useRouter()
@@ -51,24 +51,22 @@ export default function FormList({ initialForms, isSuperUser = false }: { initia
     }
   }
 
-  const handleDuplicate = async (formId: string) => {
-    if (duplicatingId) return
-    setDuplicatingId(formId)
+  const handleSaveAsTemplate = async (formId: string) => {
+    if (savingTemplateId) return
+    setSavingTemplateId(formId)
     try {
-      const result = await duplicateForm(formId)
+      const result = await saveFormAsTemplate(formId)
       if (!result?.error) {
-        addToast('Form duplicated successfully', 'success')
-        // Refresh immediately to show the new form
+        addToast('Template saved successfully', 'success')
         router.refresh()
-        // Force a small delay to ensure the server has processed
         setTimeout(() => router.refresh(), 100)
       } else {
-        addToast('Failed to duplicate form', 'error')
+        addToast(result.error || 'Failed to save template', 'error')
       }
     } catch (error) {
-      addToast('Failed to duplicate form', 'error')
+      addToast('Failed to save template', 'error')
     } finally {
-      setDuplicatingId(null)
+      setSavingTemplateId(null)
     }
   }
 
@@ -188,16 +186,16 @@ export default function FormList({ initialForms, isSuperUser = false }: { initia
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleDuplicate(form.id)
+                      handleSaveAsTemplate(form.id)
                     }}
-                    disabled={duplicatingId === form.id}
+                    disabled={savingTemplateId === form.id}
                     className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
-                    title="Duplicate"
+                    title="Save as Template"
                   >
-                    {duplicatingId === form.id ? (
+                    {savingTemplateId === form.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Copy className="h-4 w-4" />
+                      <LayoutTemplate className="h-4 w-4" />
                     )}
                   </button>
                   {isSuperUser && (

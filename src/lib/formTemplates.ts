@@ -11,11 +11,14 @@ export interface TemplateField {
 
 export interface FormTemplate {
   id: string
+  source?: 'built_in' | 'saved'
   name: string
   description: string
   language: 'en' | 'dv'
   emoji: string
   category: string
+  createdBy?: string | null
+  createdAt?: string | null
   fields: TemplateField[]
   formDefaults: {
     title: string

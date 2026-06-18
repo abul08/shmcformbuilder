@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { LayoutTemplate, Loader2, X, CheckCircle2, ChevronRight } from 'lucide-react'
+import { LayoutTemplate, Loader2, ChevronRight } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -37,7 +37,7 @@ function TemplateCard({
     isLoading,
 }: {
     template: FormTemplate
-    onUse: (id: string) => void
+    onUse: (template: FormTemplate) => void
     isLoading: boolean
 }) {
     return (
@@ -76,7 +76,7 @@ function TemplateCard({
             {/* Action */}
             <div className="px-5 pb-5">
                 <button
-                    onClick={() => onUse(template.id)}
+                    onClick={() => onUse(template)}
                     disabled={isLoading}
                     id={`use-template-${template.id}`}
                     className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -98,17 +98,21 @@ function TemplateCard({
     )
 }
 
-export default function TemplatePickerButton() {
+export default function TemplatePickerButton({ savedTemplates = [] }: { savedTemplates?: FormTemplate[] }) {
     const [isOpen, setIsOpen] = useState(false)
     const [loadingId, setLoadingId] = useState<string | null>(null)
     const router = useRouter()
     const { addToast } = useToast()
+    const templates: FormTemplate[] = [
+        ...formTemplates.map((template) => ({ ...template, source: 'built_in' as const })),
+        ...savedTemplates,
+    ]
 
-    const handleUseTemplate = async (templateId: string) => {
+    const handleUseTemplate = async (template: FormTemplate) => {
         if (loadingId) return
-        setLoadingId(templateId)
+        setLoadingId(template.id)
         try {
-            const result = await createFormFromTemplate(templateId, 'en')
+            const result = await createFormFromTemplate(template.id, template.language)
             if (result?.error) {
                 addToast(result.error, 'error')
                 setLoadingId(null)
@@ -142,14 +146,14 @@ export default function TemplatePickerButton() {
                             Choose a Template
                         </DialogTitle>
                         <DialogDescription className="text-gray-400">
-                            Start with a pre-built form. All field labels can be renamed after creation.
+                            Start with a built-in or saved form template. All field labels can be renamed after creation.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="mt-4 grid grid-cols-1 gap-4">
-                        {formTemplates.map((template) => (
+                        {templates.map((template) => (
                             <TemplateCard
-                                key={template.id}
+                                key={`${template.source || 'built_in'}-${template.id}`}
                                 template={template}
                                 onUse={handleUseTemplate}
                                 isLoading={loadingId === template.id}
@@ -157,7 +161,7 @@ export default function TemplatePickerButton() {
                         ))}
                     </div>
 
-                    {formTemplates.length === 0 && (
+                    {templates.length === 0 && (
                         <div className="py-12 text-center text-gray-500">
                             No templates available yet.
                         </div>
