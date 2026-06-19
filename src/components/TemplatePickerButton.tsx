@@ -58,20 +58,6 @@ function TemplateCard({
                 </div>
             </div>
 
-            {/* Field chips */}
-            <div className="px-5 pb-4">
-                <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Includes</p>
-                <div className="flex flex-wrap gap-1.5">
-                    {template.fields.map((f, i) => (
-                        <span
-                            key={i}
-                            className="text-xs bg-white/5 text-gray-400 border border-white/10 px-2 py-0.5 rounded-md"
-                        >
-                            {FIELD_TYPE_LABELS[f.type] || f.type} — {f.label}
-                        </span>
-                    ))}
-                </div>
-            </div>
 
             {/* Action */}
             <div className="px-5 pb-5">
