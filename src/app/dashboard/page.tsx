@@ -95,7 +95,7 @@ export default async function DashboardPage() {
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-10 sm:py-12">
         <div className="space-y-8">
           {/* Hero/Stats Section */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b border-white/10 gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-300">Your Forms</h1>
               <p className="text-gray-600 mt-1">Create, manage and share your forms.</p>
@@ -107,7 +107,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Filters/Search */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
               <Filter className="h-4 w-4 mr-2 inline -mt-0.5" />
               Filter
             </button>
-          </div>
+          </div> */}
 
           {/* Form Grid */}
           <div>
