@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Form, FormField, FormFieldType, Json } from '@/types'
 import { Button } from '@/components/ui/button'
-import { Plus, GripVertical, Trash2, CheckCircle2, Eye, Save, Globe, Settings, Loader2, ChevronLeft, X, Image as ImageIcon, Upload, Share2, Copy, Calendar, LayoutTemplate } from 'lucide-react'
+import { Plus, GripVertical, Trash2, CheckCircle2, Eye, Save, Globe, Settings, Loader2, ChevronLeft, X, Upload, Share2, Copy, LayoutTemplate } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -17,7 +17,6 @@ import Link from 'next/link'
 import { addField, deleteField, updateField, reorderFields, updateFormDetails } from '@/actions/fields'
 import { uploadFile } from '@/actions/files'
 import { validateFile } from '@/lib/fileUpload'
-import { safeGetSettings } from '@/lib/formUtils'
 import { latinToThaana } from '@/lib/thaana'
 import { saveFormAsTemplate, togglePublish, updateFormSettings } from '@/actions/forms'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
