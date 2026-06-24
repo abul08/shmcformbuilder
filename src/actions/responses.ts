@@ -4,37 +4,100 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function submitResponse(formId: string, answers: Record<string, any>, metadata: any) {
-  const supabase = await createClient()
   const adminSupabase = await createAdminClient()
 
+  if (!UUID_PATTERN.test(formId)) {
+    return { error: 'Invalid form ID' }
+  }
 
-
-  // Debug: Check if form exists and is published
-  const { data: formCheck, error: formCheckError } = await supabase
+  const { data: formCheck, error: formCheckError } = await adminSupabase
     .from('forms')
-    .select('id, is_published, title')
+    .select('id, is_published, is_accepting_responses, closes_at, form_fields(id, type, required)')
     .eq('id', formId)
     .single()
 
   if (formCheckError || !formCheck) {
-    console.error('[SubmitResponse] Form check failed:', formCheckError)
-    return { error: `Form Check Failed: ${formCheckError?.message || 'Form not found or unpublished'}` }
+    return { error: 'Form not found' }
   }
 
-
-
   if (!formCheck.is_published) {
-    console.error('[SubmitResponse] Form is NOT published.')
     return { error: 'Form is not published' }
   }
 
-  // 1. Create response record
+  const isClosed = !formCheck.is_accepting_responses || (formCheck.closes_at && new Date() > new Date(formCheck.closes_at))
+  if (isClosed) {
+    return { error: 'Form is not accepting responses' }
+  }
+
+  const ignoredFieldTypes = new Set(['section_header', 'text_block', 'image', 'bank_account'])
+  const fields = ((formCheck as any).form_fields || []).filter((field: any) => !ignoredFieldTypes.has(field.type))
+  const fieldsById = new Map(fields.map((field: any) => [field.id, field]))
+  const submittedFieldIds = Object.keys(answers || {})
+
+  const unknownField = submittedFieldIds.find((fieldId) => !fieldsById.has(fieldId))
+  if (unknownField) {
+    return { error: 'Submission contains invalid fields' }
+  }
+
+  const isEmptyAnswer = (value: any) => {
+    if (value === null || value === undefined) return true
+    if (typeof value === 'string') return value.trim().length === 0
+    if (Array.isArray(value)) return value.length === 0
+    if (typeof value === 'boolean') return value === false
+    if (typeof value === 'object') return Object.keys(value).length === 0
+    return false
+  }
+
+  for (const field of fields) {
+    const value = answers?.[field.id]
+    if (field.required && isEmptyAnswer(value)) {
+      return { error: 'Please fill all required fields' }
+    }
+  }
+
+  const answerEntries: Array<{ field_id: string; value: any }> = []
+
+  for (const fieldId of submittedFieldIds) {
+    const field = fieldsById.get(fieldId) as any
+    const value = answers[fieldId]
+    if (isEmptyAnswer(value)) continue
+
+    const cleanedValue = field.type === 'file' && typeof value === 'object'
+      ? {
+        fileName: String(value.fileName || 'Uploaded file').slice(0, 255),
+        fileSize: Number(value.fileSize) || 0,
+        fileType: String(value.fileType || '').slice(0, 100),
+        filePath: String(value.filePath || ''),
+      }
+      : value
+
+    if (field.type === 'file' && (!(cleanedValue as any).filePath || !(cleanedValue as any).filePath.startsWith(`responses/${formId}/`))) {
+      return { error: 'Invalid uploaded file' }
+    }
+
+    if (JSON.stringify(cleanedValue).length > 100000) {
+      return { error: 'One or more answers are too large' }
+    }
+
+    answerEntries.push({
+      field_id: fieldId,
+      value: cleanedValue,
+    })
+  }
+
+  const safeMetadata = {
+    user_agent: typeof metadata?.user_agent === 'string' ? metadata.user_agent.slice(0, 500) : 'unknown',
+    language_mode: typeof metadata?.language_mode === 'string' ? metadata.language_mode.slice(0, 20) : undefined,
+  }
+
   const { data: response, error: responseError } = await adminSupabase
     .from('form_responses')
     .insert({
       form_id: formId,
-      metadata,
+      metadata: safeMetadata,
     })
     .select()
     .single()
@@ -44,19 +107,15 @@ export async function submitResponse(formId: string, answers: Record<string, any
     return { error: `Submission failed: ${responseError.message}` }
   }
 
-  // 2. Create answer records
-
-  const answerEntries = Object.entries(answers).map(([fieldId, value]) => ({
-    response_id: response.id,
-    field_id: fieldId,
-    value: value,
-  }))
-
-
-
-  const { error: answersError } = await adminSupabase
-    .from('form_answers')
-    .insert(answerEntries)
+  const { error: answersError } = answerEntries.length > 0
+    ? await adminSupabase
+      .from('form_answers')
+      .insert(answerEntries.map((entry) => ({
+        response_id: response.id,
+        field_id: entry.field_id,
+        value: entry.value,
+      })))
+    : { error: null }
 
   if (answersError) {
     console.error('[SubmitResponse] Answers Insert Error:', answersError)
@@ -71,6 +130,10 @@ export async function clearFormResponses(formId: string) {
   const supabase = await createClient()
   const adminSupabase = await createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  if (!UUID_PATTERN.test(formId)) {
+    return { error: 'Invalid form ID' }
+  }
 
   if (!user) {
     return { error: 'Unauthorized' }
@@ -100,14 +163,28 @@ export async function clearFormResponses(formId: string) {
 
   // 2. Delete Responses & Answers (Admin Client)
 
-  // A. Get all response IDs
+  // A. Get all response IDs and uploaded files
   const { data: responses } = await adminSupabase
     .from('form_responses')
-    .select('id')
+    .select('id, form_answers(value)')
     .eq('form_id', formId)
 
   if (responses && responses.length > 0) {
     const responseIds = responses.map(r => r.id)
+    const filePaths = responses
+      .flatMap((response: any) => response.form_answers || [])
+      .map((answer: any) => answer?.value?.filePath)
+      .filter((path: unknown): path is string => typeof path === 'string' && path.startsWith(`responses/${formId}/`))
+
+    if (filePaths.length > 0) {
+      const { error: storageError } = await adminSupabase.storage
+        .from('form-uploads')
+        .remove(filePaths)
+
+      if (storageError) {
+        console.error('Error deleting response files:', storageError)
+      }
+    }
 
     // Delete answers
     const { error: answersError } = await adminSupabase
@@ -140,6 +217,10 @@ export async function deleteFormResponse(formId: string, responseId: string) {
   const adminSupabase = await createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  if (!UUID_PATTERN.test(formId) || !UUID_PATTERN.test(responseId)) {
+    return { error: 'Invalid response ID' }
+  }
+
   if (!user) {
     return { error: 'Unauthorized' }
   }
@@ -171,7 +252,7 @@ export async function deleteFormResponse(formId: string, responseId: string) {
 
   const filePaths = ((response as any).form_answers || [])
     .map((answer: any) => answer?.value?.filePath)
-    .filter((path: unknown): path is string => typeof path === 'string' && path.length > 0)
+    .filter((path: unknown): path is string => typeof path === 'string' && path.startsWith(`responses/${formId}/`))
 
   if (filePaths.length > 0) {
     const { error: storageError } = await adminSupabase.storage

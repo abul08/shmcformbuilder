@@ -515,7 +515,7 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
 
                                 {field.type === 'text_block' && (
                                     <div className="my-6 border-r-2 border-primary/20 pr-4 py-2 text-right">
-                                        <h3 className="text-2xl text-white mb-2 font-waheed">{label}</h3>
+                                        <h3 className="text-2xl text-gray-400 mb-2 font-waheed">{label}</h3>
                                         {content && (
                                             <p className="text-gray-400 whitespace-pre-wrap leading-relaxed font-faruma">
                                                 {content}

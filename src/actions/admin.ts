@@ -4,6 +4,18 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+const VALID_ROLES = new Set(['USER', 'SUPER_USER'])
+const USERNAME_PATTERN = /^[a-zA-Z0-9._-]{3,40}$/
+
+function sanitizeRole(role: FormDataEntryValue | null) {
+    const value = String(role || 'USER')
+    return VALID_ROLES.has(value) ? value : 'USER'
+}
+
+function sanitizeText(value: FormDataEntryValue | null, maxLength = 120) {
+    return String(value || '').trim().slice(0, maxLength)
+}
+
 export async function createUser(formData: FormData) {
     const supabase = await createClient()
     const adminClient = await createAdminClient()
@@ -23,14 +35,22 @@ export async function createUser(formData: FormData) {
     }
 
     // 2. Extract Data
-    const username = formData.get('username') as string
-    const password = formData.get('password') as string
-    const fullName = formData.get('fullName') as string
-    const department = formData.get('department') as string
-    const role = formData.get('role') as string // 'USER' or 'SUPER_USER'
+    const username = sanitizeText(formData.get('username'), 40)
+    const password = String(formData.get('password') || '')
+    const fullName = sanitizeText(formData.get('fullName'))
+    const department = sanitizeText(formData.get('department'))
+    const role = sanitizeRole(formData.get('role'))
 
     if (!username || !password || !fullName) {
         return { error: 'Missing required fields' }
+    }
+
+    if (!USERNAME_PATTERN.test(username)) {
+        return { error: 'Username can only contain letters, numbers, dots, underscores, and hyphens' }
+    }
+
+    if (password.length < 6) {
+        return { error: 'Password must be at least 6 characters' }
     }
 
     // Auto-generate email from username
@@ -61,7 +81,7 @@ export async function createUser(formData: FormData) {
             username: username,
             full_name: fullName,
             department: department,
-            role: role || 'USER'
+            role
         })
 
     if (profileError) {
@@ -89,6 +109,10 @@ export async function deleteUser(userId: string) {
 
     if (profile?.role !== 'SUPER_USER') return { error: 'Forbidden' }
 
+    if (userId === requestor.id) {
+        return { error: 'You cannot delete your own account' }
+    }
+
     // Delete User
     const { error } = await adminClient.auth.admin.deleteUser(userId)
 
@@ -115,10 +139,14 @@ export async function updateUser(userId: string, formData: FormData) {
     if (profile?.role !== 'SUPER_USER') return { error: 'Forbidden' }
 
     // Extract Data
-    const fullName = formData.get('fullName') as string
-    const department = formData.get('department') as string
-    const role = formData.get('role') as string
-    const email = formData.get('email') as string
+    const fullName = sanitizeText(formData.get('fullName'))
+    const department = sanitizeText(formData.get('department'))
+    const role = sanitizeRole(formData.get('role'))
+    const email = sanitizeText(formData.get('email'), 254)
+
+    if (!fullName) {
+        return { error: 'Full name is required' }
+    }
 
     // Update Auth User (Email/Metadata)
     const updateData: any = {
@@ -138,7 +166,7 @@ export async function updateUser(userId: string, formData: FormData) {
         .update({
             full_name: fullName,
             department: department,
-            role: role
+            role
         })
         .eq('id', userId)
 
@@ -164,7 +192,7 @@ export async function resetUserPassword(userId: string, formData: FormData) {
 
     if (profile?.role !== 'SUPER_USER') return { error: 'Forbidden' }
 
-    const password = formData.get('password') as string
+    const password = String(formData.get('password') || '')
     if (!password || password.length < 6) return { error: 'Password must be at least 6 characters' }
 
     const { error } = await adminClient.auth.admin.updateUserById(userId, {

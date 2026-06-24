@@ -1,15 +1,11 @@
-'use client'
+﻿'use client'
 
 import { Form, FormField, FormResponse, FormAnswer } from '@/types'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Download, Search, Table as TableIcon, Filter, ChevronDown, ChevronRight, Eye } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import { useState, Fragment } from 'react'
 import { useToast } from '@/components/ui/toast'
 import { getFileIcon, formatFileSize } from '@/lib/fileUpload'
 import { getSignedUrl } from '@/actions/files'
-import * as XLSX from 'xlsx'
 import { Trash2, Loader2 } from 'lucide-react'
 import { clearFormResponses, deleteFormResponse } from '@/actions/responses'
 import {
@@ -149,17 +145,14 @@ export default function ResponsesTable({
       return next
     })
 
-  const exportToExcel = () => {
+  const exportToCsv = () => {
     try {
       const allFields = [...fields].sort((a, b) => a.order_index - b.order_index)
       const regularFields = allFields.filter(
         f => !['section_header', 'text_block', 'image', 'layout', 'size_table', 'bank_account'].includes(f.type)
       )
-      const sizeTableFields = allFields.filter(f => f.type === 'size_table')
+      const sizeFieldsForExport = allFields.filter(f => f.type === 'size_table')
 
-      const wb = XLSX.utils.book_new()
-
-      // ── Sheet 1: Main Responses ──────────────────────────────────────────────
       const mainHeaders = [
         '#',
         'Submitted At',
@@ -171,8 +164,9 @@ export default function ResponsesTable({
           const ans = r.form_answers.find(a => a.field_id === f.id)
           const val = ans?.value
           if (val === null || val === undefined) return ''
-          if (f.type === 'file' && typeof val === 'object' && val !== null && 'fileName' in (val as object))
+          if (f.type === 'file' && typeof val === 'object' && val !== null && 'fileName' in (val as object)) {
             return (val as any).fileName || 'Uploaded file'
+          }
           if (Array.isArray(val)) return val.join(', ')
           if (typeof val === 'object') return JSON.stringify(val)
           return val
@@ -180,18 +174,15 @@ export default function ResponsesTable({
         return [idx + 1, new Date(r.submitted_at).toLocaleString(), ...cols]
       })
 
-      const wsMain = XLSX.utils.aoa_to_sheet([mainHeaders, ...mainRows])
-      wsMain['!cols'] = mainHeaders.map((h, i) => ({
-        wch: Math.min(Math.max(String(h).length, ...mainRows.map(r => String(r[i] ?? '').length)) + 2, 55),
-      }))
-      wsMain['!freeze'] = { xSplit: 0, ySplit: 1 }
-      XLSX.utils.book_append_sheet(wb, wsMain, 'Responses')
+      const csvRows: Array<Array<string | number>> = [
+        ['Responses'],
+        mainHeaders,
+        ...mainRows,
+      ]
 
-      // ── Sheet 2: Size Orders (one row per respondent × category × size) ──────
-      if (sizeTableFields.length > 0) {
-        // Try to identify the 'Name' field to include in the order rows
-        const nameField = regularFields.find(f => 
-          f.label.toLowerCase().includes('name') || 
+      if (sizeFieldsForExport.length > 0) {
+        const nameField = regularFields.find(f =>
+          f.label.toLowerCase().includes('name') ||
           f.label.includes('ނަން') ||
           (f.options as any)?.label_dv?.includes('ނަން')
         ) || regularFields.find(f => f.type === 'short_text' || f.type === 'english_text' || f.type === 'dhivehi_text')
@@ -206,7 +197,7 @@ export default function ResponsesTable({
             if (nameAns && nameAns.value) respondentName = String(nameAns.value)
           }
 
-          sizeTableFields.forEach(f => {
+          sizeFieldsForExport.forEach(f => {
             const ans = r.form_answers.find(a => a.field_id === f.id)
             const val = ans?.value as Record<string, any> | null | undefined
             if (!val || typeof val !== 'object') return
@@ -216,12 +207,9 @@ export default function ResponsesTable({
               const catData = val[cat.name]
               if (!catData) return
               const price = Number((cat as any).price) || 0
-
-              // Detect sleeve-nested: values are objects not numbers
               const isSleeved = Object.values(catData).some((v: any) => typeof v === 'object' && v !== null)
 
               if (isSleeved) {
-                // { sleeveKey: { size: qty } }
                 Object.entries(catData as unknown as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
                   const sleeveLabel = sleeveKey === 'LS' ? 'Long Sleeve' : sleeveKey === 'SS' ? 'Short Sleeve' : sleeveKey
                   cat.sizes.forEach(size => {
@@ -237,13 +225,12 @@ export default function ResponsesTable({
                         size,
                         Number(qty),
                         price > 0 ? price : '',
-                        price > 0 ? Number(qty) * price : ''
+                        price > 0 ? Number(qty) * price : '',
                       ])
                     }
                   })
                 })
               } else {
-                // Flat: { size: qty }
                 cat.sizes.forEach(size => {
                   const qty = (catData as unknown as Record<string, number>)[size]
                   if (qty !== undefined && qty !== null && Number(qty) > 0) {
@@ -257,7 +244,7 @@ export default function ResponsesTable({
                       size,
                       Number(qty),
                       price > 0 ? price : '',
-                      price > 0 ? Number(qty) * price : ''
+                      price > 0 ? Number(qty) * price : '',
                     ])
                   }
                 })
@@ -267,17 +254,26 @@ export default function ResponsesTable({
         })
 
         if (sizeRows.length > 0) {
-          const wsSize = XLSX.utils.aoa_to_sheet([sizeHeaders, ...sizeRows])
-          wsSize['!cols'] = sizeHeaders.map((h, i) => ({
-            wch: Math.min(Math.max(String(h).length, ...sizeRows.map(r => String(r[i] ?? '').length)) + 2, 40),
-          }))
-          wsSize['!freeze'] = { xSplit: 0, ySplit: 1 }
-          XLSX.utils.book_append_sheet(wb, wsSize, 'Size Orders')
+          csvRows.push([], ['Size Orders'], sizeHeaders, ...sizeRows)
         }
       }
 
-      XLSX.writeFile(wb, `${form.title.replace(/\s+/g, '_')}_responses.xlsx`)
-      addToast(`Exported ${responses.length} responses to Excel`, 'success')
+      const escapeCsv = (value: string | number) => {
+        const text = String(value ?? '')
+        return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+      }
+
+      const csv = csvRows.map(row => row.map(escapeCsv).join(',')).join('\r\n')
+      const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${form.title.replace(/\s+/g, '_')}_responses.csv`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      addToast(`Exported ${responses.length} responses to CSV`, 'success')
     } catch (error) {
       console.error('Export error:', error)
       addToast('Failed to export responses', 'error')
@@ -307,11 +303,11 @@ export default function ResponsesTable({
             Columns
           </button>
           <button
-            onClick={exportToExcel}
+            onClick={exportToCsv}
             className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors"
           >
             <Download className="h-4 w-4 mr-2 inline -mt-0.5" />
-            Export Excel
+            Export CSV
           </button>
           {responses.length > 0 && (
             <button
@@ -428,13 +424,13 @@ export default function ResponsesTable({
                       Object.entries(catData as unknown as Record<string, Record<string, number>>).forEach(([sleeveKey, sleeveData]) => {
                         const entries = cat.sizes
                           .filter(s => Number(sleeveData[s]) > 0)
-                          .map(s => `${s}×${sleeveData[s]}`)
+                          .map(s => `${s}Ã—${sleeveData[s]}`)
                         if (entries.length) sizeSummaryParts.push(`${cat.name} (${sleeveKey}): ${entries.join(', ')}`)
                       })
                     } else {
                       const entries = cat.sizes
                         .filter(s => Number((catData as unknown as Record<string,number>)[s]) > 0)
-                        .map(s => `${s}×${(catData as unknown as Record<string,number>)[s]}`)
+                        .map(s => `${s}Ã—${(catData as unknown as Record<string,number>)[s]}`)
                       if (entries.length) sizeSummaryParts.push(`${cat.name}: ${entries.join(', ')}`)
                     }
                   })
@@ -538,7 +534,7 @@ export default function ResponsesTable({
                               </div>
                             </button>
                           ) : (
-                            <span className="text-xs text-gray-600">—</span>
+                            <span className="text-xs text-gray-600">â€”</span>
                           )}
                         </td>
                       )}
@@ -572,7 +568,7 @@ export default function ResponsesTable({
                       </td>
                     </tr>
 
-                    {/* Expanded detail row — size_table breakdown */}
+                    {/* Expanded detail row â€” size_table breakdown */}
                     {isExpanded && sizeTableFields.length > 0 && (
                       <tr key={`${response.id}-detail`} className="bg-gray-900/60">
                         <td colSpan={totalCols} className="px-6 py-5">
@@ -605,7 +601,7 @@ export default function ResponsesTable({
                                       const sleeveLabel = sleeveKey === 'LS' ? 'Long Sleeve' : sleeveKey === 'SS' ? 'Short Sleeve' : sleeveKey
                                       const catAmount = catQty * price
                                       grandQty += catQty; grandAmount += catAmount
-                                      detailRows.push({ key: `${cat.name}-${sleeveKey}`, label: `${cat.name} — ${sleeveLabel}`, price, sizeQtys, catQty, catAmount })
+                                      detailRows.push({ key: `${cat.name}-${sleeveKey}`, label: `${cat.name} â€” ${sleeveLabel}`, price, sizeQtys, catQty, catAmount })
                                     }
                                   })
                                 } else {

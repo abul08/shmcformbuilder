@@ -26,7 +26,6 @@ export const ALLOWED_EXTENSIONS = [
 ]
 
 export function validateFile(file: File): { valid: boolean; error?: string } {
-  // Check file size
   if (file.size > MAX_FILE_SIZE) {
     return {
       valid: false,
@@ -34,7 +33,6 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
     }
   }
 
-  // Check file type
   const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`
   const isValidType = ALLOWED_EXTENSIONS.includes(fileExtension)
   const isValidMimeType = Object.keys(ALLOWED_FILE_TYPES).includes(file.type)
@@ -54,25 +52,25 @@ export function formatFileSize(bytes: number): string {
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
 export function getFileIcon(fileName: string): string {
   const ext = fileName.split('.').pop()?.toLowerCase()
   switch (ext) {
     case 'pdf':
-      return '📄'
+      return 'PDF'
     case 'doc':
     case 'docx':
-      return '📝'
+      return 'DOC'
     case 'xls':
     case 'xlsx':
-      return '📊'
+      return 'XLS'
     case 'jpg':
     case 'jpeg':
     case 'png':
-      return '🖼️'
+      return 'IMG'
     default:
-      return '📎'
+      return 'FILE'
   }
 }

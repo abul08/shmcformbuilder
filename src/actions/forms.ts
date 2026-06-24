@@ -123,54 +123,6 @@ export async function updateFormSettings(id: string, updates: { is_accepting_res
   revalidatePath(`/forms/${id}/edit`)
 }
 
-export async function duplicateForm(id: string) {
-  const supabase = await createClient()
-
-  // 1. Get the original form
-  const { data: form, error: formError } = await supabase
-    .from('forms')
-    .select('*, form_fields(*)')
-    .eq('id', id)
-    .single()
-
-  if (formError) return { error: formError.message }
-
-  // 2. Create new form
-  const newSlug = createSlug()
-  const { data: newForm, error: newFormError } = await supabase
-    .from('forms')
-    .insert({
-      user_id: form.user_id,
-      title: `${form.title} (Copy)`,
-      description: form.description,
-      slug: newSlug,
-      is_published: false,
-    })
-    .select()
-    .single()
-
-  if (newFormError) return { error: newFormError.message }
-
-  // 3. Duplicate fields
-  if (form.form_fields && form.form_fields.length > 0) {
-    const newFields = form.form_fields.map((field: any) => {
-      const { id, created_at, form_id, active, ...rest } = field
-      return {
-        ...rest,
-        form_id: newForm.id,
-      }
-    })
-
-    const { error: fieldsError } = await supabase
-      .from('form_fields')
-      .insert(newFields)
-
-    if (fieldsError) return { error: fieldsError.message }
-  }
-
-  revalidatePath('/dashboard')
-}
-
 export async function saveFormAsTemplate(id: string, templateName?: string) {
   const { supabase, user, client } = await getCurrentUserContext()
 

@@ -2,31 +2,101 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ALLOWED_EXTENSIONS, ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from '@/lib/fileUpload'
+
+const IMAGE_FILE_TYPES = new Set(['image/jpeg', 'image/png'])
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function getExtension(fileName: string) {
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  return ext ? `.${ext}` : ''
+}
+
+function validateUpload(file: File, imageOnly = false) {
+  if (file.size > MAX_FILE_SIZE) {
+    return `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`
+  }
+
+  const extension = getExtension(file.name)
+  const hasAllowedExtension = ALLOWED_EXTENSIONS.includes(extension)
+  const hasAllowedMimeType = Object.keys(ALLOWED_FILE_TYPES).includes(file.type)
+
+  if (!hasAllowedExtension || (file.type && !hasAllowedMimeType)) {
+    return `File type not allowed. Allowed types: ${ALLOWED_EXTENSIONS.join(', ')}`
+  }
+
+  if (imageOnly && !IMAGE_FILE_TYPES.has(file.type)) {
+    return 'Only JPG and PNG images are allowed for form images'
+  }
+
+  return null
+}
 
 export async function uploadFile(
   formData: FormData,
   formId: string,
-  folder: string = 'responses',
+  _folder: string = 'responses',
   bucketName: string = 'form-uploads'
 ): Promise<{ url?: string; path?: string; error?: string }> {
   const supabase = await createClient()
+  const adminSupabase = await createAdminClient()
 
   const file = formData.get('file') as File
   if (!file) {
     return { error: 'No file provided' }
   }
 
-  // Generate unique file path: {folder}/{formId}/{timestamp}-{filename}
+  if (!UUID_PATTERN.test(formId)) {
+    return { error: 'Invalid form ID' }
+  }
+
+  if (bucketName !== 'form-uploads' && bucketName !== 'form-assets') {
+    return { error: 'Invalid upload bucket' }
+  }
+
+  const imageOnly = bucketName === 'form-assets'
+  const validationError = validateUpload(file, imageOnly)
+  if (validationError) {
+    return { error: validationError }
+  }
+
+  const { data: form, error: formError } = await adminSupabase
+    .from('forms')
+    .select('user_id, is_published, is_accepting_responses, closes_at')
+    .eq('id', formId)
+    .single()
+
+  if (formError || !form) {
+    return { error: 'Form not found' }
+  }
+
+  if (bucketName === 'form-assets') {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (form.user_id !== user.id && profile?.role !== 'SUPER_USER') {
+      return { error: 'Insufficient permissions' }
+    }
+  } else {
+    const isClosed = !form.is_accepting_responses || (form.closes_at && new Date() > new Date(form.closes_at))
+    if (!form.is_published || isClosed) {
+      return { error: 'This form is not accepting uploads' }
+    }
+  }
+
   const timestamp = Date.now()
   const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-  // If folder is 'responses', we keep current structure for backward compatibility or adjust clients
-  // But let's make it generic: folder/formId/...
-  // Caller passes 'responses/responseId' if needed.
-
-  const filePath = `${folder}/${formId}/${timestamp}-${sanitizedFileName}`
+  const baseFolder = bucketName === 'form-assets' ? 'images' : 'responses'
+  const filePath = `${baseFolder}/${formId}/${timestamp}-${sanitizedFileName}`
 
   try {
-    const { data, error } = await supabase.storage
+    const { error } = await adminSupabase.storage
       .from(bucketName)
       .upload(filePath, file, {
         cacheControl: '3600',
@@ -39,7 +109,7 @@ export async function uploadFile(
     }
 
     // Get public URL
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = adminSupabase.storage
       .from(bucketName)
       .getPublicUrl(filePath)
 
@@ -69,11 +139,18 @@ export async function getSignedUrl(
   }
 
   try {
-    const inferredFormId = formId || filePath.split('/').find(part =>
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(part)
-    )
+    if (bucketName !== 'form-uploads' && bucketName !== 'form-assets') {
+      return { error: 'Invalid file bucket' }
+    }
+
+    const inferredFormId = formId || filePath.split('/').find(part => UUID_PATTERN.test(part))
 
     if (!inferredFormId) {
+      return { error: 'Could not verify file access' }
+    }
+
+    const expectedPrefix = bucketName === 'form-assets' ? `images/${inferredFormId}/` : `responses/${inferredFormId}/`
+    if (!filePath.startsWith(expectedPrefix)) {
       return { error: 'Could not verify file access' }
     }
 
@@ -114,20 +191,3 @@ export async function getSignedUrl(
   }
 }
 
-export async function deleteFile(filePath: string, bucketName: string = 'form-uploads'): Promise<{ error?: string }> {
-  const supabase = await createClient()
-
-  try {
-    const { error } = await supabase.storage
-      .from(bucketName)
-      .remove([filePath])
-
-    if (error) {
-      return { error: error.message }
-    }
-
-    return {}
-  } catch (error) {
-    return { error: 'Failed to delete file' }
-  }
-}

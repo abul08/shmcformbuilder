@@ -1,14 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Plus, LayoutDashboard, LogOut, Search, Filter, Shield } from 'lucide-react'
+import { LogOut, Shield } from 'lucide-react'
 import { getSavedFormTemplates } from '@/actions/forms'
 import { logout } from '@/actions/auth'
 import FormList from '@/components/FormList'
 import CreateFormButton from '@/components/CreateFormButton'
 import TemplatePickerButton from '@/components/TemplatePickerButton'
-import { Input } from '@/components/ui/input'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
