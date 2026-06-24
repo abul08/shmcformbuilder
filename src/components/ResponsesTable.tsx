@@ -3,7 +3,7 @@
 import { Form, FormField, FormResponse, FormAnswer } from '@/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Download, Search, Table as TableIcon, Filter, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react'
+import { Download, Search, Table as TableIcon, Filter, ChevronDown, ChevronRight, Eye } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useState, Fragment } from 'react'
 import { useToast } from '@/components/ui/toast'
@@ -11,7 +11,7 @@ import { getFileIcon, formatFileSize } from '@/lib/fileUpload'
 import { getSignedUrl } from '@/actions/files'
 import * as XLSX from 'xlsx'
 import { Trash2, Loader2 } from 'lucide-react'
-import { clearFormResponses } from '@/actions/responses'
+import { clearFormResponses, deleteFormResponse } from '@/actions/responses'
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,8 @@ export default function ResponsesTable({
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
   const [confirmText, setConfirmText] = useState('')
+  const [fileActionKey, setFileActionKey] = useState<string | null>(null)
+  const [deletingResponseId, setDeletingResponseId] = useState<string | null>(null)
   const router = useRouter()
 
   const handleClearResponses = () => {
@@ -66,6 +68,69 @@ export default function ResponsesTable({
       addToast('Failed to clear responses', 'error')
     } finally {
       setIsClearing(false)
+    }
+  }
+
+  const handleFileAction = async (fileData: any, mode: 'preview' | 'download') => {
+    const key = `${mode}:${fileData.filePath || fileData.fileUrl || fileData.fileName}`
+    setFileActionKey(key)
+
+    try {
+      const result: { url?: string; error?: string } = fileData.filePath
+        ? await getSignedUrl(
+          fileData.filePath,
+          'form-uploads',
+          form.id,
+          mode === 'download' ? fileData.fileName : undefined
+        )
+        : { url: fileData.fileUrl }
+
+      if (!result.url) {
+        addToast(result.error || 'Could not open file', 'error')
+        return
+      }
+
+      const link = document.createElement('a')
+      link.href = result.url
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      if (mode === 'download') {
+        link.download = fileData.fileName || 'uploaded-file'
+      }
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (error) {
+      addToast('Could not open file', 'error')
+    } finally {
+      setFileActionKey(null)
+    }
+  }
+
+  const handleDeleteResponse = async (responseId: string) => {
+    const confirmed = window.confirm('Delete this response? This will permanently remove the response, its answers, and any uploaded files attached to it.')
+    if (!confirmed) return
+
+    setDeletingResponseId(responseId)
+
+    try {
+      const result = await deleteFormResponse(form.id, responseId)
+      if (result.error) {
+        addToast(result.error, 'error')
+        return
+      }
+
+      setExpandedRows(prev => {
+        const next = new Set(prev)
+        next.delete(responseId)
+        return next
+      })
+      addToast('Response deleted', 'success')
+      router.refresh()
+    } catch (error) {
+      addToast('Failed to delete response', 'error')
+    } finally {
+      setDeletingResponseId(null)
     }
   }
 
@@ -395,25 +460,49 @@ export default function ResponsesTable({
                         // Handle file uploads
                         if (field.type === 'file' && typeof displayValue === 'object' && displayValue !== null && 'fileName' in displayValue) {
                           const fileData = displayValue as any
+                          const previewKey = `preview:${fileData.filePath || fileData.fileUrl || fileData.fileName}`
+                          const downloadKey = `download:${fileData.filePath || fileData.fileUrl || fileData.fileName}`
                           return (
                             <td key={field.id} className="px-6 py-4">
-                              <a
-                                href={fileData.fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors max-w-[250px] group"
-                              >
+                              <div className="flex items-center gap-3 max-w-[280px]">
                                 <span className="text-lg">{getFileIcon(fileData.fileName)}</span>
                                 <div className="flex-1 min-w-0">
-                                  <div className="truncate font-medium group-hover:underline">
+                                  <div className="truncate text-sm font-medium text-gray-200">
                                     {fileData.fileName}
                                   </div>
                                   <div className="text-xs text-gray-500">
                                     {formatFileSize(fileData.fileSize)}
                                   </div>
                                 </div>
-                                <ExternalLink className="h-3 w-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </a>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleFileAction(fileData, 'preview')}
+                                    disabled={fileActionKey === previewKey || fileActionKey === downloadKey}
+                                    className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-primary disabled:opacity-50"
+                                    title="Preview file"
+                                  >
+                                    {fileActionKey === previewKey ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Eye className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleFileAction(fileData, 'download')}
+                                    disabled={fileActionKey === previewKey || fileActionKey === downloadKey}
+                                    className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-primary disabled:opacity-50"
+                                    title="Download file"
+                                  >
+                                    {fileActionKey === downloadKey ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Download className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
                             </td>
                           )
                         }
@@ -454,15 +543,32 @@ export default function ResponsesTable({
                         </td>
                       )}
 
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => toggleRow(response.id)}
-                          className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          {isExpanded
-                            ? <ChevronDown className="h-4 w-4" />
-                            : <ChevronRight className="h-4 w-4" />}
-                        </button>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteResponse(response.id)}
+                            disabled={deletingResponseId === response.id}
+                            className="rounded p-1.5 text-gray-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                            title="Delete response"
+                          >
+                            {deletingResponseId === response.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleRow(response.id)}
+                            className="rounded p-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                            title={isExpanded ? 'Collapse details' : 'Expand details'}
+                          >
+                            {isExpanded
+                              ? <ChevronDown className="h-4 w-4" />
+                              : <ChevronRight className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </td>
                     </tr>
 

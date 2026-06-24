@@ -25,7 +25,10 @@ export default async function ResponsesPage({ params }: { params: { id: string }
 
   const isSuperUser = profile?.role === 'SUPER_USER'
 
-  const { data: form, error: formError } = await supabase
+  // Use admin client for Super Users to bypass RLS on assigned forms and fields.
+  const client = isSuperUser ? await createAdminClient() : supabase
+
+  const { data: form, error: formError } = await client
     .from('forms')
     .select('*, form_fields(*)')
     .eq('id', id)
@@ -34,9 +37,6 @@ export default async function ResponsesPage({ params }: { params: { id: string }
   if (formError || !form) {
     notFound()
   }
-
-  // Use admin client for Super Users to bypass RLS, otherwise use standard client
-  const client = isSuperUser ? await createAdminClient() : supabase
 
   const { data: responses, error: responsesError } = await client
     .from('form_responses')

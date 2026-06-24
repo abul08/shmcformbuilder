@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function uploadFile(
   formData: FormData,
@@ -52,13 +53,56 @@ export async function uploadFile(
   }
 }
 
-export async function getSignedUrl(filePath: string, bucketName: string = 'form-uploads'): Promise<{ url?: string; error?: string }> {
+export async function getSignedUrl(
+  filePath: string,
+  bucketName: string = 'form-uploads',
+  formId?: string,
+  downloadName?: string
+): Promise<{ url?: string; error?: string }> {
   const supabase = await createClient()
+  const adminSupabase = await createAdminClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized' }
+  }
 
   try {
-    const { data, error } = await supabase.storage
-      .from(bucketName)
-      .createSignedUrl(filePath, 3600) // 1 hour expiry
+    const inferredFormId = formId || filePath.split('/').find(part =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(part)
+    )
+
+    if (!inferredFormId) {
+      return { error: 'Could not verify file access' }
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const { data: form, error: formError } = await adminSupabase
+      .from('forms')
+      .select('user_id')
+      .eq('id', inferredFormId)
+      .single()
+
+    if (formError || !form) {
+      return { error: 'Form not found' }
+    }
+
+    if (form.user_id !== user.id && profile?.role !== 'SUPER_USER') {
+      return { error: 'Insufficient permissions' }
+    }
+
+    const storage = adminSupabase.storage.from(bucketName) as any
+    const { data, error } = await storage.createSignedUrl(
+      filePath,
+      3600,
+      downloadName ? { download: downloadName } : undefined
+    )
 
     if (error) {
       return { error: error.message }

@@ -33,10 +33,28 @@ export async function assignForm(formId: string, newUserId: string) {
         return { error: 'Target user not found' }
     }
 
+    const { data: form, error: formError } = await adminClient
+        .from('forms')
+        .select('user_id, settings')
+        .eq('id', formId)
+        .single()
+
+    if (formError || !form) {
+        return { error: formError?.message || 'Form not found' }
+    }
+
+    const settings = {
+        ...((form.settings as Record<string, unknown> | null) || {}),
+        created_by: (form.settings as Record<string, unknown> | null)?.created_by || form.user_id,
+        assigned_to: newUserId,
+        assigned_by: requestor.id,
+        assigned_at: new Date().toISOString(),
+    }
+
     // 3. Update form owner
     const { error: updateError } = await adminClient
         .from('forms')
-        .update({ user_id: newUserId })
+        .update({ user_id: newUserId, settings })
         .eq('id', formId)
 
     if (updateError) {

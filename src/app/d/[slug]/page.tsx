@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import DhivehiPublicForm from '@/components/DhivehiPublicForm'
 import { ToastProvider } from '@/components/ui/toast'
@@ -17,8 +18,22 @@ export default async function DhivehiPublicFormPage({
     const query = await searchParams
     const isPreview = query?.preview === '1'
     const supabase = await createClient()
+    const { data: { user } } = isPreview
+        ? await supabase.auth.getUser()
+        : { data: { user: null } }
 
-    const { data: form, error } = await supabase
+    const { data: profile } = user
+        ? await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+        : { data: null }
+
+    const isSuperUser = profile?.role === 'SUPER_USER'
+    const readClient = isPreview && isSuperUser ? await createAdminClient() : supabase
+
+    const { data: form, error } = await readClient
         .from('forms')
         .select('*, form_fields(*)')
         .eq('slug', slug)
@@ -30,8 +45,7 @@ export default async function DhivehiPublicFormPage({
 
     // security check: if not published, must be owner
     if (!form.is_published) {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user || user.id !== form.user_id) {
+        if (!user || (user.id !== form.user_id && !isSuperUser)) {
             notFound()
         }
     }

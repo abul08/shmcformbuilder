@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import EnglishFormBuilder from '@/components/EnglishFormBuilder'
 import DhivehiFormBuilder from '@/components/DhivehiFormBuilder'
@@ -17,13 +18,22 @@ export default async function EditFormPage({ params }: { params: { id: string } 
     redirect('/login')
   }
 
-  const { data: form, error: formError } = await supabase
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isSuperUser = profile?.role === 'SUPER_USER'
+  const readClient = isSuperUser ? await createAdminClient() : supabase
+
+  const { data: form, error: formError } = await readClient
     .from('forms')
     .select('*, form_fields(*)')
     .eq('id', id)
     .single()
 
-  const { count: responseCount } = await supabase
+  const { count: responseCount } = await readClient
     .from('form_responses')
     .select('*', { count: 'exact', head: true })
     .eq('form_id', id)

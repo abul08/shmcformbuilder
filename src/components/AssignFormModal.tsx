@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { assignForm } from '@/actions/superAdmin'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 interface AssignFormModalProps {
     isOpen: boolean
@@ -30,6 +31,7 @@ export default function AssignFormModal({ isOpen, onClose, formId, formTitle }: 
     const [isFetchingUsers, setIsFetchingUsers] = useState(false)
     const { addToast } = useToast()
     const supabase = createClient()
+    const router = useRouter()
 
     useEffect(() => {
         if (isOpen) {
@@ -60,6 +62,7 @@ export default function AssignFormModal({ isOpen, onClose, formId, formTitle }: 
                 addToast(result.error, 'error')
             } else {
                 addToast('Form assigned successfully', 'success')
+                router.refresh()
                 onClose()
             }
         } catch (error) {

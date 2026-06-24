@@ -544,7 +544,7 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                                                 }}
                                                 className={`group flex min-h-44 w-full cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed p-5 transition-all ${uploadedFiles[field.id]
                                                     ? 'border-primary/60 bg-primary/10 shadow-sm shadow-primary/10'
-                                                    : 'border-gray-300 hover:border-primary/50 hover:bg-primary/5'
+                                                    : 'border-gray-800 hover:border-primary/50 hover:bg-primary/5'
                                                     }`}
                                             >
                                                 {uploadedFiles[field.id] ? (

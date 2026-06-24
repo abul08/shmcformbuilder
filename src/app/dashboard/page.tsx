@@ -44,9 +44,32 @@ export default async function DashboardPage() {
 
   const { data: forms, error } = await query
   const { templates: savedTemplates = [] } = await getSavedFormTemplates()
+
+  const profileIds = Array.from(new Set((forms || []).flatMap((form: any) => {
+    const settings = form.settings || {}
+    return [form.user_id, settings.created_by].filter(Boolean)
+  })))
+
+  const { data: relatedProfiles = [] } = profileIds.length > 0
+    ? await client
+      .from('profiles')
+      .select('id, username, full_name, role, department')
+      .in('id', profileIds)
+    : { data: [] }
+
+  const profilesById = new Map((relatedProfiles || []).map((item: any) => [item.id, item]))
+
   const visibleForms = (forms || []).filter((form: any) => {
     const settings = form.settings || {}
     return settings.is_template !== true && settings.is_template !== 'true'
+  }).map((form: any) => {
+    const settings = form.settings || {}
+    const creatorId = settings.created_by || form.user_id
+    return {
+      ...form,
+      _creator_profile: profilesById.get(creatorId) || profilesById.get(form.user_id) || null,
+      _owner_profile: profilesById.get(form.user_id) || null,
+    }
   })
 
 
@@ -139,7 +162,7 @@ export default async function DashboardPage() {
                 </a>
               </div>
             ) : (
-              <FormList initialForms={visibleForms} isSuperUser={isSuperUser} />
+              <FormList initialForms={visibleForms} isSuperUser={isSuperUser} currentUserId={user.id} />
             )}
           </div>
         </div>

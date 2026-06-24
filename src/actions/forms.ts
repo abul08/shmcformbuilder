@@ -65,7 +65,7 @@ export async function createForm(formData: FormData) {
       title,
       slug,
       is_published: false,
-      settings: { language: language }
+      settings: { language: language, created_by: user.id }
     })
     .select()
     .single()
@@ -415,7 +415,10 @@ export async function createFormFromTemplate(templateId: string, language: 'en' 
         is_published: false,
         is_accepting_responses: true,
         closes_at: null,
-        settings: cleanTemplateSettings(savedTemplate.settings, templateLanguage),
+        settings: {
+          ...cleanTemplateSettings(savedTemplate.settings, templateLanguage),
+          created_by: user.id,
+        },
       })
       .select()
       .single()
@@ -458,7 +461,7 @@ export async function createFormFromTemplate(templateId: string, language: 'en' 
       description: template.formDefaults.description,
       slug,
       is_published: false,
-      settings: { language: templateLanguage },
+      settings: { language: templateLanguage, created_by: user.id },
     })
     .select()
     .single()
