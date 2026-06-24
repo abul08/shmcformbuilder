@@ -679,6 +679,16 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
     }
 
     const handleDeleteField = async (id: string) => {
+        const confirmed = await confirm({
+            title: 'Delete question?',
+            description: 'Are you sure you want to delete this question? This action cannot be undone.',
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            variant: 'danger'
+        })
+
+        if (!confirmed) return
+
         // Store the original fields for rollback
         const previousFields = [...fields]
 
@@ -1258,6 +1268,7 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
                     </div>
                 </DialogContent>
             </Dialog>
+            {dialog}
         </div>
     )
 }

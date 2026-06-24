@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { Form, FormField, FormResponse, FormAnswer } from '@/types'
 import { Download, Search, Table as TableIcon, Filter, ChevronDown, ChevronRight, Eye } from 'lucide-react'
@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useRouter } from 'next/navigation'
+import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface ResponseWithAnswers extends FormResponse {
   form_answers: FormAnswer[]
@@ -40,6 +41,7 @@ export default function ResponsesTable({
   const [fileActionKey, setFileActionKey] = useState<string | null>(null)
   const [deletingResponseId, setDeletingResponseId] = useState<string | null>(null)
   const router = useRouter()
+  const { confirm, dialog } = useConfirmDialog()
 
   const handleClearResponses = () => {
     setConfirmText('')
@@ -104,7 +106,13 @@ export default function ResponsesTable({
   }
 
   const handleDeleteResponse = async (responseId: string) => {
-    const confirmed = window.confirm('Delete this response? This will permanently remove the response, its answers, and any uploaded files attached to it.')
+    const confirmed = await confirm({
+      title: 'Delete response?',
+      description: 'Delete this response? This will permanently remove the response, its answers, and any uploaded files attached to it.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger'
+    })
     if (!confirmed) return
 
     setDeletingResponseId(responseId)
@@ -693,6 +701,7 @@ export default function ResponsesTable({
           <span>Page 1 of 1</span>
         </div>
       </div>
+      {dialog}
     </div >
   )
 }

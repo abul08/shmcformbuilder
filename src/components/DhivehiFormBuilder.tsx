@@ -553,6 +553,16 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
     }
 
     const handleDeleteField = async (id: string) => {
+        const confirmed = await confirm({
+            title: 'ސުވާލު ފުހެލަންވީ؟',
+            description: 'މި ސުވާލު ފުހެލުމުން އަނބުރާ ނުހޯދޭނެއެވެ.',
+            confirmText: 'ފުހެލާ',
+            cancelText: 'ކެންސަލް',
+            variant: 'danger'
+        })
+
+        if (!confirmed) return
+
         // Store the original fields for rollback
         const previousFields = [...fields]
 
@@ -1142,6 +1152,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
                     </div>
                 </DialogContent>
             </Dialog>
+            {dialog}
         </div>
     )
 }

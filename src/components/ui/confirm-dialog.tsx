@@ -101,10 +101,7 @@ export function ConfirmDialog({
               {cancelText}
             </button>
             <button
-              onClick={() => {
-                onConfirm()
-                onCancel()
-              }}
+              onClick={onConfirm}
               className={`rounded-md ${config.buttonBg} ${config.buttonHover} px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors`}
             >
               {confirmText}
