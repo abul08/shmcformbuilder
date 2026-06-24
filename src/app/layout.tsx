@@ -22,6 +22,12 @@ const farumaFont = localFont({
   display: 'swap',
 });
 
+const aammuFont = localFont({
+  src: './fonts/aammufkF.ttf',
+  variable: '--font-aammu',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: "SHMC Forms",
   description: "Milandhoo Council",
@@ -34,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${inter.className} ${waheedFont.variable} ${farumaFont.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${inter.className} ${waheedFont.variable} ${farumaFont.variable} ${aammuFont.variable} font-sans antialiased`}>
         <ToastProvider>
           {children}
         </ToastProvider>

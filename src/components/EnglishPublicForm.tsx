@@ -625,9 +625,6 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
                                                         <p className="mt-1 text-sm text-gray-600">
                                                             Drag and drop here, or click to browse
                                                         </p>
-                                                        <p className="mt-4 inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                                                            PDF, DOC, XLS, JPG, PNG up to {MAX_FILE_SIZE / 1024 / 1024}MB
-                                                        </p>
                                                     </div>
                                                 )}
                                             </label>

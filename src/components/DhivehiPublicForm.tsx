@@ -242,7 +242,7 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                             {(form.settings as any).form_number} <span className="font-waheed sm:text-2xl text-lg" dir="rtl">ނަންބަރު:</span>
                         </p>
                     )}
-                    <h2 className="text-2xl sm:text-3xl text-gray-400 font-waheed mt-2">
+                    <h2 className="text-2xl sm:text-3xl text-gray-400 font-aammu tracking-wide mt-2">
                         {displayTitle}
                     </h2>
                     {displayDesc && (
@@ -517,7 +517,7 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                                     <div className="my-6 border-r-2 border-primary/20 pr-4 py-2 text-right">
                                         <h3 className="text-2xl text-gray-400 mb-2 font-waheed">{label}</h3>
                                         {content && (
-                                            <p className="text-gray-400 whitespace-pre-wrap leading-relaxed font-faruma">
+                                            <p className="text-gray-500 whitespace-pre-wrap leading-relaxed font-faruma">
                                                 {content}
                                             </p>
                                         )}
@@ -586,9 +586,7 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                                                         <p className="mt-1 text-sm text-gray-600">
                                                             މިތަނަށް ޑްރެގް ކުރައްވާ، ނުވަތަ ބްރައުޒް ކުރައްވާ
                                                         </p>
-                                                        <p className="mt-4 inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                                                            PDF, DOC, XLS, JPG, PNG up to {MAX_FILE_SIZE / 1024 / 1024}MB
-                                                        </p>
+
                                                     </div>
                                                 )}
                                             </label>

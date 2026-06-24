@@ -22,6 +22,7 @@ module.exports = {
         waheed: ['var(--font-waheed)', "var(--font-faruma)", 'sans-serif'],
         waheedh: ['var(--font-waheed)', "var(--font-faruma)", 'sans-serif'], // Alias for typo/preference
         faruma: ['var(--font-faruma)', 'sans-serif'],
+        aammu: ['var(--font-aammu)', "var(--font-faruma)", 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
