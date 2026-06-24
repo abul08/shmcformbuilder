@@ -583,7 +583,7 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
                                                 }}
                                                 className={`group flex min-h-44 w-full cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed p-5 transition-all ${uploadedFiles[field.id]
                                                     ? 'border-primary/60 bg-primary/10 shadow-sm shadow-primary/10'
-                                                    : 'border-gray-300 bg-white hover:border-primary/50 hover:bg-primary/5'
+                                                    : 'border-gray-300 hover:border-primary/50 hover:bg-primary/5'
                                                     }`}
                                             >
                                                 {uploadedFiles[field.id] ? (
@@ -619,7 +619,7 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
                                                         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-105">
                                                             <Upload className="h-7 w-7" />
                                                         </div>
-                                                        <p className="mt-4 text-base font-semibold text-gray-950">
+                                                        <p className="mt-4 text-base font-semibold text-primary">
                                                             Upload a file
                                                         </p>
                                                         <p className="mt-1 text-sm text-gray-600">
