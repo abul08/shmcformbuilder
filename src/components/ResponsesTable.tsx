@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Button } from '@/components/ui/button'
 
 interface ResponseWithAnswers extends FormResponse {
   form_answers: FormAnswer[]
