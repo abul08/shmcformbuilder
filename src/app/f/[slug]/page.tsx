@@ -4,8 +4,63 @@ import { notFound } from 'next/navigation'
 import EnglishPublicForm from '@/components/EnglishPublicForm'
 import DhivehiPublicForm from '@/components/DhivehiPublicForm'
 import { ToastProvider } from '@/components/ui/toast'
+import { Metadata, ResolvingMetadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata(
+  { params }: { params: { slug: string } },
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = await createClient()
+
+  const { data: form } = await supabase
+    .from('forms')
+    .select('title, description, is_published')
+    .eq('slug', slug)
+    .single()
+
+  if (!form) {
+    return {
+      title: 'Form Not Found',
+    }
+  }
+
+  const title = form.title || 'SHMC Form'
+  const description = form.description || 'View and fill out this form.'
+  
+  // Use absolute URL for the image if we have VERCEL_URL or NEXT_PUBLIC_SITE_URL, 
+  // otherwise it will default to relative (which often works with next/og, but let's be robust)
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')
+  
+  const ogUrl = `${baseUrl}/api/og?title=${encodeURIComponent(title)}&desc=${encodeURIComponent(description)}`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      images: [
+        {
+          url: ogUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogUrl],
+    },
+  }
+}
 
 export default async function PublicFormPage({
   params,
