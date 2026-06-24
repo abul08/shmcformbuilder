@@ -180,7 +180,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                 <div className="p-6">
                     <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
                         {/* Label Editor */}
-                        <div className="sm:col-span-4">
+                        <div className="sm:col-span-6">
                             <label htmlFor={`label-${field.id}`} className="block text-sm/6 font-medium text-white">
                                 {field.type === 'image' ? 'Image Title / Label' : field.type === 'text_block' ? 'Heading Text' : field.type === 'consent' ? 'Heading' : field.type === 'section_header' ? 'Section Title' : field.type === 'size_table' ? 'Field Label' : 'Question'}
                             </label>
@@ -202,39 +202,6 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                 />
                             </div>
                         </div>
-
-                        {/* Field Type Selector */}
-                        <div className="sm:col-span-2">
-                            <label htmlFor={`type-${field.id}`} className="block text-sm/6 font-medium text-white">
-                                Field Type
-                            </label>
-                            <div className="mt-2">
-                                <select
-                                    id={`type-${field.id}`}
-                                    value={field.type}
-                                    onChange={(e) => onUpdate(field.id, { type: e.target.value as FormFieldType })}
-                                    className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
-                                >
-                                    <option value="short_text">Short Text</option>
-                                    <option value="dhivehi_text">Short Text (Dhivehi)</option>
-                                    <option value="long_text">Long Text</option>
-                                    <option value="email">Email</option>
-                                    <option value="number">Number</option>
-                                    <option value="date">Date</option>
-                                    <option value="checkbox">Checkboxes</option>
-                                    <option value="radio">Multiple Choice</option>
-                                    <option value="dropdown">Dropdown</option>
-                                    <option value="file">File Upload</option>
-                                    <option value="image">Image Embed</option>
-                                    <option value="size_table">Size Table</option>
-                                    <option value="text_block">Text Block</option>
-                                    <option value="consent">Consent / Terms</option>
-                                    <option value="section_header">Section Header</option>
-                                    <option value="bank_account">Bank Account</option>
-                                </select>
-                            </div>
-                        </div>
-
 
                         {/* Image Specific Controls */}
                         {field.type === 'image' && (

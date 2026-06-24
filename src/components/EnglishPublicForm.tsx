@@ -6,7 +6,7 @@ import { submitResponse } from '@/actions/responses'
 import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Copy, Eye } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
-import { validateFile, formatFileSize, getFileIcon, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
+import { validateFile, formatFileSize, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
 import { uploadFile } from '@/actions/files'
 import { latinToThaana } from '@/lib/thaana'
 import PublicLogoHeader from '@/components/PublicLogoHeader'
@@ -565,7 +565,6 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
 
                                 {field.type === 'file' && (
                                     <div className="space-y-4">
-                                        {/* File Upload Area */}
                                         <div className="relative">
                                             <input
                                                 id={field.id}
@@ -577,20 +576,30 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
                                             />
                                             <label
                                                 htmlFor={field.id}
-                                                className={`flex flex-col items-center justify-center w-full h-32 rounded-lg border-2 border-dashed cursor-pointer transition-all ${uploadedFiles[field.id]
-                                                    ? 'border-primary/50 bg-primary/5'
-                                                    : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+                                                onDragOver={(e) => e.preventDefault()}
+                                                onDrop={(e) => {
+                                                    e.preventDefault()
+                                                    handleFileChange(field.id, e.dataTransfer.files?.[0] || null)
+                                                }}
+                                                className={`group flex min-h-44 w-full cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed p-5 transition-all ${uploadedFiles[field.id]
+                                                    ? 'border-primary/60 bg-primary/10 shadow-sm shadow-primary/10'
+                                                    : 'border-gray-300 bg-white hover:border-primary/50 hover:bg-primary/5'
                                                     }`}
                                             >
                                                 {uploadedFiles[field.id] ? (
-                                                    <div className="flex items-center gap-3 px-4">
-                                                        <span className="text-2xl">{getFileIcon(uploadedFiles[field.id].name)}</span>
-                                                        <div className="text-left flex-1">
-                                                            <p className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                                                    <div className="flex w-full items-center gap-4">
+                                                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                                                            <File className="h-7 w-7" />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1 text-left">
+                                                            <p className="truncate text-sm font-semibold text-gray-950">
                                                                 {uploadedFiles[field.id].name}
                                                             </p>
-                                                            <p className="text-xs text-gray-500">
-                                                                {formatFileSize(uploadedFiles[field.id].size)}
+                                                            <p className="mt-1 text-xs text-gray-500">
+                                                                {formatFileSize(uploadedFiles[field.id].size)} selected
+                                                            </p>
+                                                            <p className="mt-2 text-xs font-medium text-primary">
+                                                                Click here to replace this file
                                                             </p>
                                                         </div>
                                                         <button
@@ -599,38 +608,40 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
                                                                 e.preventDefault()
                                                                 handleFileChange(field.id, null)
                                                             }}
-                                                            className="text-gray-400 hover:text-gray-500 p-1 hover:bg-gray-200 rounded transition-colors"
+                                                            className="rounded-full border border-gray-200 bg-white p-2 text-gray-400 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+                                                            aria-label="Remove selected file"
                                                         >
                                                             <X className="h-4 w-4" />
                                                         </button>
                                                     </div>
                                                 ) : (
                                                     <div className="text-center">
-                                                        <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                                                        <p className="mt-2 text-sm text-gray-600">
-                                                            <span className="font-semibold">Click to upload</span> or drag and drop
+                                                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-105">
+                                                            <Upload className="h-7 w-7" />
+                                                        </div>
+                                                        <p className="mt-4 text-base font-semibold text-gray-950">
+                                                            Upload a file
                                                         </p>
-
+                                                        <p className="mt-1 text-sm text-gray-600">
+                                                            Drag and drop here, or click to browse
+                                                        </p>
+                                                        <p className="mt-4 inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                                                            PDF, DOC, XLS, JPG, PNG up to {MAX_FILE_SIZE / 1024 / 1024}MB
+                                                        </p>
                                                     </div>
                                                 )}
                                             </label>
                                         </div>
 
-                                        {/* Upload Progress */}
                                         {uploadingFiles[field.id] && (
-                                            <div className="flex items-center gap-2 text-sm text-primary">
-                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                                            <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
+                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary"></div>
                                                 <span>Uploading...</span>
                                             </div>
                                         )}
 
-                                        {/* File Requirements */}
-                                        <p className="text-xs text-gray-500">
-                                            Allowed file types: {ALLOWED_EXTENSIONS.join(', ')} • Maximum size: {MAX_FILE_SIZE / 1024 / 1024}MB
-                                        </p>
                                     </div>
                                 )}
-
                                 {field.type === 'section_header' && (
                                     <div className="mt-16 mb-8 border-b border-white/10 pb-6 text-left">
                                         <h3 className="text-2xl sm:text-3xl font-semibold text-gray-400 mb-2">{field.label}</h3>
@@ -794,8 +805,8 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
                                                                                             }
                                                                                         }}
                                                                                         className={`px-4 py-1.5 rounded-md text-sm font-bold border transition-all ${isActive
-                                                                                                ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
-                                                                                                : 'bg-white/5 text-gray-400 border-white/15 hover:border-white/30 hover:text-gray-200'
+                                                                                            ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
+                                                                                            : 'bg-white/5 text-gray-400 border-white/15 hover:border-white/30 hover:text-gray-200'
                                                                                             }`}
                                                                                     >
                                                                                         {sleeve === 'LS' ? '🧥 Long Sleeve' : '👕 Short Sleeve'}
@@ -874,8 +885,8 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
                                                                                                     }
                                                                                                 }}
                                                                                                 className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${isSizeSelected
-                                                                                                        ? 'bg-primary/20 text-primary border-primary/50 shadow-sm'
-                                                                                                        : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/25 hover:text-gray-300'
+                                                                                                    ? 'bg-primary/20 text-primary border-primary/50 shadow-sm'
+                                                                                                    : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/25 hover:text-gray-300'
                                                                                                     }`}
                                                                                             >
                                                                                                 {size}

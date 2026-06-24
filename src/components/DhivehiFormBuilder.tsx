@@ -151,7 +151,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                 <div className="p-6">
                     <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6" dir="rtl">
                         {/* Label Editor */}
-                        <div className="sm:col-span-4">
+                        <div className="sm:col-span-6">
                             <label htmlFor={`label-${field.id}`} className="block text-lg tracking-wide text-gray-300 font-waheed">
                                 {field.type === 'image' ? 'ސުރުޚީ' : field.type === 'text_block' ? 'ސުރުޚީ' : field.type === 'consent' ? 'ސުރުޚީ' : field.type === 'section_header' ? 'ސެކްޝަންގެ ނަން' : 'ސުވާލު'}
                             </label>
@@ -172,58 +172,6 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                     className={`block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 ${field.type === 'english_text' ? 'text-left font-sans' : 'text-right font-faruma'}`}
                                     dir={field.type === 'english_text' ? 'ltr' : 'rtl'}
                                 />
-                            </div>
-                        </div>
-
-                        {/* Field Type Selector */}
-                        <div className="sm:col-span-2">
-                            <label htmlFor={`type-${field.id}`} className="block text-sm/6 text-white text-right font-faruma">
-                                ބާވަތް
-                            </label>
-                            <div className="mt-2">
-                                <select
-                                    id={`type-${field.id}`}
-                                    value={(field.type === 'short_text' && (field.options as any)?.is_english_answer) ? 'english_answer' : field.type}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        let newType = val as FormFieldType;
-                                        let extraOptions = {};
-
-                                        if (val === 'english_answer') {
-                                            newType = 'short_text';
-                                            extraOptions = { is_english_answer: true };
-                                        } else if (val === 'short_text') {
-                                            extraOptions = { is_english_answer: false };
-                                        }
-
-                                        const updates: any = { type: newType, options: { ...((field.options as any) || {}), ...extraOptions } }
-
-                                        // Clear Dhivehi label if switching to English text
-                                        if (newType === 'english_text' && (field.options as any)?.label_dv) {
-                                            updates.options.label_dv = ''
-                                        }
-                                        onUpdate(field.id, updates)
-                                    }}
-                                    className="block w-full rounded-md bg-white/5 py-1.5 px-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-right font-faruma"
-                                    dir="rtl"
-                                >
-                                    <option value="short_text">ކުރު ޖަވާބު</option>
-                                    <option value="english_text">ކުރު ޖަވާބު (އިނގިރޭސި ސުވާލު)</option>
-                                    <option value="english_answer">ކުރު ޖަވާބު (އިނގިރޭސި ޖަވާބު)</option>
-                                    <option value="long_text">ދިގު ޖަވާބު</option>
-                                    <option value="email">އީމެއިލް</option>
-                                    <option value="number">އަދަދު</option>
-                                    <option value="date">ތާރީޚް</option>
-                                    <option value="checkbox">ޗެކްބޮކްސް</option>
-                                    <option value="radio">މަލްޓިޕަލް ޗޮއިސް</option>
-                                    <option value="dropdown">ޑްރޮޕްޑައުން</option>
-                                    <option value="file">ފައިލް އަޕްލޯޑް</option>
-                                    <option value="image">ފޮޓޯ</option>
-                                    <option value="text_block">ލިޔުންކޮޅެއް</option>
-                                    <option value="section_header">ބައި (ސެކްޝަން)</option>
-                                    <option value="consent">އިޤްރާރު</option>
-                                    <option value="bank_account">ބޭންކް އެކައުންޓް</option>
-                                </select>
                             </div>
                         </div>
 
