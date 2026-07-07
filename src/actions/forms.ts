@@ -109,7 +109,7 @@ export async function togglePublish(id: string, isPublished: boolean) {
   revalidatePath(`/forms/${id}/edit`)
 }
 
-export async function updateFormSettings(id: string, updates: { is_accepting_responses?: boolean, closes_at?: string | null }) {
+export async function updateFormSettings(id: string, updates: { is_accepting_responses?: boolean, closes_at?: string | null, settings?: any }) {
   const supabase = await createClient()
   const { error } = await supabase
     .from('forms')

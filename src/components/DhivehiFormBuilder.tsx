@@ -732,7 +732,7 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
         })
     }
 
-    const handleUpdateSettings = async (updates: { is_accepting_responses?: boolean, closes_at?: string | null }) => {
+    const handleUpdateSettings = async (updates: { is_accepting_responses?: boolean, closes_at?: string | null, settings?: any }) => {
         setForm({ ...form, ...updates } as Form)
         await updateFormSettings(form.id, updates)
         setLastSaved(new Date())
