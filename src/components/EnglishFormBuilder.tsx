@@ -1200,8 +1200,8 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
                                     role="switch"
                                     aria-checked={!!(form.settings as any)?.hide_from_public_page}
                                     onClick={() => {
-                                        const currentSettings = form.settings || {};
-                                        handleUpdateSettings({ settings: { ...currentSettings, hide_from_public_page: !(currentSettings as any).hide_from_public_page } });
+                                        const currentSettings = (form.settings as any) || {};
+                                        handleUpdateSettings({ settings: { ...currentSettings, hide_from_public_page: !currentSettings.hide_from_public_page } });
                                     }}
                                     className={`${(form.settings as any)?.hide_from_public_page ? 'bg-primary' : 'bg-white/10'} relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`}
                                 >
