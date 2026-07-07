@@ -81,6 +81,8 @@ export default function FormToolbox({ onAddField, variant = 'default', className
                 { type: 'bank_account', label: 'Bank Account', icon: List, description: 'Display a bank account to copy' },
                 { type: 'section_header', label: 'Section Header', icon: Type, description: 'Add a section break' },
                 { type: 'text_block', label: 'Text Block', icon: Pilcrow, description: 'Static text and heading' },
+                { type: 'text_list', label: 'Text List', icon: List, description: 'List of text items' },
+                { type: 'block_list', label: 'Block List', icon: List, description: 'Repeater block with sub-fields' },
                 { type: 'consent', label: 'Consent', icon: CheckSquare, description: 'Terms agreement checkbox' },
             ]
         }

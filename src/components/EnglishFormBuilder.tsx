@@ -156,7 +156,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
         >
-            <div className={`rounded-lg bg-white/5 ring-1 ring-inset transition-all duration-200 ${isFocused || isDragging ? 'ring-primary/50 shadow-lg shadow-primary/10' : 'ring-white/10 hover:ring-white/20'}`}>
+            <div className={`rounded-lg ${field.type === 'section_header' ? 'bg-primary/20' : 'bg-white/5'} ring-1 ring-inset transition-all duration-200 ${isFocused || isDragging ? 'ring-primary/50 shadow-lg shadow-primary/10' : (field.type === 'section_header' ? 'ring-primary/50' : 'ring-white/10 hover:ring-white/20')}`}>
                 {/* Drag Handle & Type Badge */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
                     <div className="flex items-center gap-3">
@@ -421,7 +421,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         )}
 
                         {/* Placeholder (for text fields) */}
-                        {(field.type === 'short_text' || field.type === 'dhivehi_text' || field.type === 'long_text' || field.type === 'email' || field.type === 'number') && (
+                        {(field.type === 'short_text' || field.type === 'dhivehi_text' || field.type === 'long_text' || field.type === 'email' || field.type === 'number' || field.type === 'text_list') && (
                             <div className="col-span-full">
                                 <label htmlFor={`placeholder-${field.id}`} className="block text-sm/6 font-medium text-white">
                                     Placeholder Text
@@ -442,6 +442,130 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                         className={`block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 ${field.type === 'dhivehi_text' ? 'text-right font-faruma' : ''}`}
                                         dir={field.type === 'dhivehi_text' ? 'rtl' : 'ltr'}
                                     />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Minimum required items for text_list */}
+                        {field.type === 'text_list' && field.required && (
+                            <div className="col-span-full">
+                                <label className="block text-sm/6 font-medium text-white mb-2">
+                                    Minimum required items
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={(field.options as any)?.min_items ?? 1}
+                                    onChange={(e) => {
+                                        const val = Math.max(1, parseInt(e.target.value) || 1);
+                                        onUpdate(field.id, { options: { ...(field.options as any || {}), min_items: val } })
+                                    }}
+                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                                />
+                                <p className="mt-1 text-xs text-gray-400">Since this field is required, at least this many items must be filled.</p>
+                            </div>
+                        )}
+
+                        {/* File and Text List Specific Controls */}
+                        {(field.type === 'file' || field.type === 'text_list') && (
+                            <div className="col-span-full">
+                                <label className="block text-sm font-medium text-gray-400 mb-1">
+                                    Short Description (Optional)
+                                </label>
+                                <textarea
+                                    rows={2}
+                                    value={(field.options as any)?.description || ''}
+                                    onChange={(e) => onUpdate(field.id, {
+                                        options: { ...(field.options as any || {}), description: e.target.value }
+                                    })}
+                                    placeholder="e.g. Please upload your ID card..."
+                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                                ></textarea>
+                            </div>
+                        )}
+
+                        {/* Sub-fields Editor for block_list */}
+                        {field.type === 'block_list' && (
+                            <div className="col-span-full space-y-4 rounded-lg bg-black/20 p-4 border border-white/5">
+                                <label className="block text-sm/6 font-medium text-white mb-2">
+                                    Sub-Fields (Block Content)
+                                </label>
+                                <div className="space-y-3">
+                                    {(() => {
+                                        const subFields: { id: string, label: string, type?: string }[] = (field.options as any)?.sub_fields || [{ id: 'sf_1', label: 'Field 1', type: 'text' }];
+
+                                        return subFields.map((sf, idx) => (
+                                            <div key={sf.id} className="flex gap-2 items-center">
+                                                <input
+                                                    type="text"
+                                                    value={sf.label}
+                                                    onChange={(e) => {
+                                                        const newSubFields = [...subFields];
+                                                        newSubFields[idx] = { ...sf, label: e.target.value };
+                                                        onUpdate(field.id, { options: { ...(field.options as any || {}), sub_fields: newSubFields } });
+                                                    }}
+                                                    placeholder="Sub-field label (e.g. Name)"
+                                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                                                />
+                                                <select
+                                                    value={sf.type || 'text'}
+                                                    onChange={(e) => {
+                                                        const newSubFields = [...subFields];
+                                                        newSubFields[idx] = { ...sf, type: e.target.value };
+                                                        onUpdate(field.id, { options: { ...(field.options as any || {}), sub_fields: newSubFields } });
+                                                    }}
+                                                    className="block rounded-md bg-black/40 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 focus:outline-primary w-28 shrink-0"
+                                                >
+                                                    <option value="text">Text</option>
+                                                    <option value="number">Number</option>
+                                                    <option value="email">Email</option>
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (subFields.length === 1) return;
+                                                        const newSubFields = subFields.filter((_, i) => i !== idx);
+                                                        onUpdate(field.id, { options: { ...(field.options as any || {}), sub_fields: newSubFields } });
+                                                    }}
+                                                    className="text-gray-500 hover:text-red-400 disabled:opacity-50 shrink-0"
+                                                    disabled={subFields.length === 1}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        ));
+                                    })()}
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-gray-400 hover:text-white mt-2"
+                                        onClick={() => {
+                                            const subFields: { id: string, label: string }[] = (field.options as any)?.sub_fields || [{ id: 'sf_1', label: 'Field 1' }];
+                                            const newSubFields = [...subFields, { id: `sf_${Date.now()}`, label: `Field ${subFields.length + 1}` }];
+                                            onUpdate(field.id, { options: { ...(field.options as any || {}), sub_fields: newSubFields } });
+                                        }}
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Sub-Field
+                                    </Button>
+                                </div>
+                                
+                                <div className="pt-4 border-t border-white/10 mt-4">
+                                    <label className="block text-sm/6 font-medium text-white mb-2">
+                                        Minimum required blocks
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={(field.options as any)?.min_blocks ?? 1}
+                                        onChange={(e) => {
+                                            const val = Math.max(1, parseInt(e.target.value) || 1);
+                                            onUpdate(field.id, { options: { ...(field.options as any || {}), min_blocks: val } })
+                                        }}
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 focus:outline-primary"
+                                    />
+                                    <p className="mt-1 text-xs text-gray-400">If required, at least this many blocks must be filled.</p>
                                 </div>
                             </div>
                         )}
@@ -1060,6 +1184,30 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
                                     <span
                                         aria-hidden="true"
                                         className={`${form.is_accepting_responses ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                                    />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="text-sm font-medium text-white">Hide from Public Page</h4>
+                                <p className="text-xs text-gray-400">Toggle to hide this form from the public listing</p>
+                            </div>
+                            <div className="flex items-center">
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={!!(form.settings as any)?.hide_from_public_page}
+                                    onClick={() => {
+                                        const currentSettings = form.settings || {};
+                                        handleUpdateSettings({ settings: { ...currentSettings, hide_from_public_page: !(currentSettings as any).hide_from_public_page } });
+                                    }}
+                                    className={`${(form.settings as any)?.hide_from_public_page ? 'bg-primary' : 'bg-white/10'} relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`}
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        className={`${(form.settings as any)?.hide_from_public_page ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
                                     />
                                 </button>
                             </div>

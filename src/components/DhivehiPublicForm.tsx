@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Form, FormField } from '@/types'
 import { submitResponse } from '@/actions/responses'
-import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Calendar, Copy, Eye } from 'lucide-react'
+import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Calendar, Copy, Eye, Plus } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
@@ -76,6 +76,25 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                 } else if (field.type === 'consent') {
                     if (!answer) {
                         addToast(`${label} - ޤަބޫލުކުރައްވާ`, 'error', 'font-waheed') // Please accept
+                        hasError = true
+                    }
+                } else if (field.type === 'text_list') {
+                    const minItems = (field.options as any)?.min_items || 1;
+                    const validItemsCount = Array.isArray(answer) ? answer.filter(val => val.trim() !== '').length : 0;
+                    if (validItemsCount < minItems) {
+                        addToast(`${label} - މަދުވެގެން ${minItems} ޖަވާބު ދެއްވާ`, 'error', 'font-waheed')
+                        hasError = true
+                    }
+                } else if (field.type === 'block_list') {
+                    const minBlocks = (field.options as any)?.min_blocks || 1;
+                    const subFields = (field.options as any)?.sub_fields || [];
+                    
+                    const validBlocks = Array.isArray(answer) ? answer.filter(block => {
+                        return subFields.every((sf: any) => block && typeof block === 'object' && block[sf.id] && block[sf.id].trim() !== '');
+                    }) : [];
+
+                    if (validBlocks.length < minBlocks) {
+                        addToast(`${label} - މަދުވެގެން ${minBlocks} ބްލޮކް ފުރިހަމަކުރައްވާ`, 'error', 'font-waheed')
                         hasError = true
                     }
                 } else {
@@ -258,8 +277,26 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
             </div>
 
             {/* Field Cards */}
-            <div className="space-y-6">
-                {fields.map((field) => {
+            <div className="space-y-8">
+                {(() => {
+                    const sections: import('@/types').FormField[][] = [];
+                    let currentSection: import('@/types').FormField[] = [];
+                    
+                    fields.forEach(field => {
+                        if (field.type === 'section_header') {
+                            if (currentSection.length > 0) sections.push(currentSection);
+                            currentSection = [field];
+                        } else {
+                            currentSection.push(field);
+                        }
+                    });
+                    if (currentSection.length > 0) sections.push(currentSection);
+
+                    return sections.map((sectionFields, sIdx) => {
+                        const isSection = sectionFields[0]?.type === 'section_header';
+                        return (
+                            <div key={`section-${sIdx}`} className={isSection ? 'rounded-xl border border-white/10 bg-black/40 p-6 md:p-8 shadow-sm space-y-8' : 'space-y-8'}>
+                                {sectionFields.map((field) => {
                     // Normalize options for choice fields (handling legacy array vs new object format)
                     // For Dhivehi, prefer dv options if available
                     const options = (field.options as any) || {}
@@ -524,8 +561,131 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                                     </div>
                                 )}
 
+                                {field.type === 'block_list' && (() => {
+                                    const subFields: { id: string, label: string, label_dv?: string, type?: string }[] = (field.options as any)?.sub_fields || [{ id: 'sf_1', label: 'Field 1', label_dv: 'ފީލްޑް 1', type: 'text' }];
+                                    const blocks = Array.isArray(answers[field.id]) && answers[field.id].length > 0 ? answers[field.id] : [{}];
+                                    
+                                    return (
+                                        <div className="space-y-6 mt-4" dir="rtl">
+                                            {blocks.map((block: any, idx: number) => (
+                                                <div key={idx} className="relative rounded-lg border border-white/10 bg-black/20 p-5">
+                                                    <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                                                        <h4 className="text-xl text-primary font-waheed">
+                                                            {label} {idx + 1}
+                                                        </h4>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const current = [...blocks];
+                                                                if (current.length === 1) {
+                                                                    current[0] = {};
+                                                                } else {
+                                                                    current.splice(idx, 1);
+                                                                }
+                                                                setAnswers(prev => ({ ...prev, [field.id]: current }));
+                                                            }}
+                                                            className="text-gray-500 hover:text-red-400"
+                                                        >
+                                                            <X className="h-5 w-5" />
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-4">
+                                                        {subFields.map(sf => (
+                                                            <div key={sf.id}>
+                                                                <label className="block text-sm text-gray-400 mb-1 text-right font-faruma">
+                                                                    {sf.label_dv || sf.label}
+                                                                    {field.required && <span className="text-primary mr-1">*</span>}
+                                                                </label>
+                                                                <input
+                                                                    type={sf.type || 'text'}
+                                                                    value={block[sf.id] || ''}
+                                                                    onChange={(e) => {
+                                                                        const current = [...blocks];
+                                                                        const val = e.target.value;
+                                                                        current[idx] = { ...current[idx], [sf.id]: (sf.type === 'email' || sf.type === 'number') ? val : latinToThaana(val) };
+                                                                        setAnswers(prev => ({ ...prev, [field.id]: current }));
+                                                                    }}
+                                                                    className={`block w-full rounded-md bg-white/5 px-3 py-2 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 ${sf.type === 'email' || sf.type === 'number' ? 'text-left font-sans' : 'text-right font-faruma'}`}
+                                                                    dir={sf.type === 'email' || sf.type === 'number' ? 'ltr' : 'rtl'}
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const current = [...blocks, {}];
+                                                    setAnswers(prev => ({ ...prev, [field.id]: current }));
+                                                }}
+                                                className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-white/20 p-3 text-lg font-waheed text-gray-400 hover:border-primary hover:text-primary transition-colors bg-white/5"
+                                            >
+                                                <Plus className="h-5 w-5 ml-2" />
+                                                އިތުރު {label}
+                                            </button>
+                                        </div>
+                                    );
+                                })()}
+
+                                {field.type === 'text_list' && (
+                                    <div className="space-y-3" dir="rtl">
+                                        {(field.options as any)?.description_dv && (
+                                            <p className="text-sm text-gray-400 mb-2 font-faruma text-right">{(field.options as any).description_dv}</p>
+                                        )}
+                                        {((answers[field.id] as string[]) || ['']).map((val, idx) => (
+                                            <div key={idx} className="flex gap-3 items-center">
+                                                <span className="text-gray-500 font-medium w-5 text-right shrink-0">{idx + 1}.</span>
+                                                <input
+                                                    type="text"
+                                                    value={val}
+                                                    required={field.required && idx === 0 && !val}
+                                                    placeholder={(field.options as any)?.placeholder_dv || field.placeholder || 'ލިޔުއްވާ...'}
+                                                    onChange={(e) => {
+                                                        const current = [...((answers[field.id] as string[]) || [''])]
+                                                        current[idx] = latinToThaana(e.target.value)
+                                                        setAnswers(prev => ({ ...prev, [field.id]: current }))
+                                                    }}
+                                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 text-right font-faruma"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const current = [...((answers[field.id] as string[]) || [''])]
+                                                        if (current.length === 1) {
+                                                            current[0] = ''
+                                                        } else {
+                                                            current.splice(idx, 1)
+                                                        }
+                                                        setAnswers(prev => ({ ...prev, [field.id]: current }))
+                                                    }}
+                                                    className="text-gray-500 hover:text-red-400"
+                                                >
+                                                    <X className="h-5 w-5" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const current = [...((answers[field.id] as string[]) || [''])]
+                                                current.push('')
+                                                setAnswers(prev => ({ ...prev, [field.id]: current }))
+                                            }}
+                                            className="text-sm text-primary hover:text-primary/80 font-waheed"
+                                        >
+                                            + އިތުރު ކުރައްވާ
+                                        </button>
+                                    </div>
+                                )}
+
                                 {field.type === 'file' && (
                                     <div className="space-y-4" dir="rtl">
+                                        {(field.options as any)?.description_dv && (
+                                            <p className="text-sm text-gray-400 mb-2 font-faruma text-right">{(field.options as any).description_dv}</p>
+                                        )}
                                         <div className="relative">
                                             <input
                                                 id={field.id}
@@ -602,7 +762,7 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                                     </div>
                                 )}
                                 {field.type === 'section_header' && (
-                                    <div className="mt-16 mb-4 border-b border-white/10 pb-6 text-right">
+                                    <div className="mb-4 border-b border-white/10 pb-6 text-right">
                                         <h3 className="text-2xl sm:text-3xl text-primary/65  font-waheed">{label}</h3>
                                         {content && (
                                             <p className="mt-1 text-base text-gray-400 whitespace-pre-wrap font-faruma leading-relaxed">
@@ -643,9 +803,13 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    )
-                })}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )
+                    })
+                })()}
             </div>
 
             {

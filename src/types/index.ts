@@ -25,6 +25,8 @@ export type FormFieldType =
   | 'section_header'
   | 'size_table'
   | 'bank_account'
+  | 'text_list'
+  | 'block_list'
 
 export interface Form {
   id: string

@@ -16,6 +16,7 @@ export default async function Home() {
     .eq('is_published', true)
     .order('created_at', { ascending: false })
 
+  const visibleForms = forms?.filter(f => !(f.settings as any)?.hide_from_public_page) || []
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col pr-2 pl-2">
@@ -32,7 +33,7 @@ export default async function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" dir="rtl">
-              {forms?.map((form) => {
+              {visibleForms.map((form) => {
                 const isDhivehiTitle = /[\u0780-\u07BF]/.test(form.title || '');
                 const titleClass = isDhivehiTitle ? 'font-waheed text-right text-2xl' : 'font-inter text-left text-xl font-medium';
 
@@ -63,7 +64,7 @@ export default async function Home() {
                   </Link>
                 )
               })}
-              {(!forms || forms.length === 0) && (
+              {visibleForms.length === 0 && (
                 <div className="col-span-full text-center py-12 text-gray-500 bg-white/5 rounded-xl border border-dashed border-white/10">
                   <p className=' font-waheed' dir="rtl">މިވަގުތު އެއްވެސް ފޯރމް ޢާންމުކުރެވިފައެއް ނުވެއެވެ.</p>
                   <p className='text-sm'>No public forms available at the moment.</p>
