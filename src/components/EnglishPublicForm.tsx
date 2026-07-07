@@ -356,7 +356,7 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
                     return sections.map((sectionFields, sIdx) => {
                         const isSection = sectionFields[0]?.type === 'section_header';
                         return (
-                            <div key={`section-${sIdx}`} className={isSection ? 'rounded-xl border border-white/10 bg-black/40 p-6 md:p-8 shadow-sm space-y-8' : 'space-y-8'}>
+                            <div key={`section-${sIdx}`} className={isSection ? 'rounded-xl border border-white/10 bg-black/40 px-4 py-6 md:px-6 md:py-8 shadow-sm space-y-8' : 'space-y-8'}>
                                 {sectionFields.map((field) => {
                                     // Normalize options for choice fields (handling legacy array vs new object format)
                                     const choiceOptions: string[] = Array.isArray(field.options)

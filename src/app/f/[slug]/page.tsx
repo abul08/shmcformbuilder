@@ -29,12 +29,12 @@ export async function generateMetadata(
 
   const title = form.title || 'SHMC Form'
   const description = form.description || 'View and fill out this form.'
-  
+
   // Use absolute URL for the image if we have VERCEL_URL or NEXT_PUBLIC_SITE_URL, 
   // otherwise it will default to relative (which often works with next/og, but let's be robust)
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')
-  
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')
+
   const ogUrl = `${baseUrl}/api/og?title=${encodeURIComponent(title)}&desc=${encodeURIComponent(description)}`
 
   return {
@@ -128,7 +128,7 @@ export default async function PublicFormPage({
   const isDhivehi = form.settings?.language === 'dv'
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6">
+    <div className="min-h-screen bg-gray-900 py-12 px-2 sm:px-2">
       <div className="mx-auto max-w-3xl">
         <ToastProvider>
           {isDhivehi ? (
