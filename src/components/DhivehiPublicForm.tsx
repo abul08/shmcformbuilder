@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { Form, FormField } from '@/types'
 import { submitResponse } from '@/actions/responses'
-import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Calendar, Copy, Eye, Plus, Link as LinkIcon, Info as InfoIcon } from 'lucide-react'
+import { CheckCircle2, Send, Undo2, Upload, File, Trash2, Calendar, Copy, Eye, Plus, AlertCircle, Link as LinkIcon, Info as InfoIcon, X } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
@@ -792,29 +793,29 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                                                 )}
                                                 {/* Redirect Link */}
                                                 {field.type === 'redirect_link' && (
-                                                    <div className="flex justify-center my-6">
+                                                    <div className="flex justify-start my-4">
                                                         <a
                                                             href={(field.options as any)?.url || '#'}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="inline-flex items-center gap-2 rounded-md bg-white/10 px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors border border-white/20 font-waheed text-lg"
+                                                            className="group inline-flex items-center gap-2 rounded-full bg-white/5 px-6 py-2.5 text-base font-waheed text-gray-200 hover:bg-white/10 hover:text-white transition-all border border-white/5 hover:border-white/10"
                                                         >
-                                                            <LinkIcon className="h-4 w-4" />
                                                             {label || 'ލިންކަށް ދިއުމަށް'}
+                                                            <LinkIcon className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
                                                         </a>
                                                     </div>
                                                 )}
 
                                                 {/* Info Modal */}
                                                 {field.type === 'info_modal' && (
-                                                    <div className="flex justify-center my-6">
+                                                    <div className="flex justify-start my-4">
                                                         <button
                                                             type="button"
                                                             onClick={() => setOpenModalId(field.id)}
-                                                            className="inline-flex items-center gap-2 rounded-md bg-white/10 px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors border border-white/20 font-waheed text-lg"
+                                                            className="group inline-flex items-center gap-2 rounded-full bg-white/5 px-6 py-2.5 text-base font-waheed text-gray-200 hover:bg-white/10 hover:text-white transition-all border border-white/5 hover:border-white/10"
                                                         >
-                                                            <InfoIcon className="h-4 w-4" />
                                                             {label || 'އިތުރު މަޢުލޫމާތު'}
+                                                            <InfoIcon className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
                                                         </button>
                                                         
                                                         {/* Modal Dialog for Info */}
@@ -834,8 +835,10 @@ export default function DhivehiPublicForm({ form, fields, className, isPreview =
                                                                         </button>
                                                                     </div>
                                                                     <div className="p-6 overflow-y-auto">
-                                                                        <div className="text-gray-300 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-faruma text-right prose prose-invert max-w-none">
-                                                                            {(field.options as any)?.modal_content_dv || 'މަޢުލޫމާތެއް ނެތް.'}
+                                                                        <div className="text-gray-300 text-sm md:text-base leading-relaxed font-faruma text-right prose prose-invert max-w-none prose-sm ![&_p]:my-1 ![&_ul]:my-1 ![&_li]:my-0 ![&_h1]:mb-1 ![&_h2]:mb-1 ![&_h3]:mb-1 ![&_h1]:mt-3 ![&_h2]:mt-3 ![&_h3]:mt-2">
+                                                                            <ReactMarkdown>
+                                                                                {((field.options as any)?.modal_content_dv as string) || 'މަޢުލޫމާތެއް ނެތް.'}
+                                                                            </ReactMarkdown>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex justify-start px-6 py-4 border-t border-white/10 bg-black/20 rounded-b-xl">
