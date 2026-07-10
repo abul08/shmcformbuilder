@@ -176,6 +176,15 @@ export default function ResponsesTable({
           if (f.type === 'file' && typeof val === 'object' && val !== null && 'fileName' in (val as object)) {
             return (val as any).fileName || 'Uploaded file'
           }
+          if (f.type === 'block_list' && Array.isArray(val)) {
+            const subFields = (f.options as any)?.sub_fields || []
+            return val.map((block: any) => {
+              return subFields.map((sf: any) => block[sf.id] || '-').join(', ')
+            }).join('\n')
+          }
+          if (f.type === 'text_list' && Array.isArray(val)) {
+            return val.filter(v => v && String(v).trim() !== '').join(', ')
+          }
           if (Array.isArray(val)) return val.join(', ')
           if (typeof val === 'object') return JSON.stringify(val)
           return val
@@ -450,10 +459,10 @@ export default function ResponsesTable({
                     <tr className="hover:bg-white/5 transition-colors group">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-white">
+                          <span className="font-semibold text-white" suppressHydrationWarning>
                             {new Date(response.submitted_at).toLocaleDateString()}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500" suppressHydrationWarning>
                             {new Date(response.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -512,12 +521,21 @@ export default function ResponsesTable({
                           )
                         }
 
-                        // Handle arrays (checkboxes)
-                        if (Array.isArray(displayValue)) displayValue = displayValue.join(', ')
+                        // Handle arrays (checkboxes and lists)
+                        if (field.type === 'block_list' && Array.isArray(displayValue)) {
+                          const subFields = (field.options as any)?.sub_fields || []
+                          displayValue = displayValue.map((block: any) => {
+                            return subFields.map((sf: any) => block[sf.id] || '-').join(', ')
+                          }).join(' | ')
+                        } else if (field.type === 'text_list' && Array.isArray(displayValue)) {
+                          displayValue = displayValue.filter(v => v && String(v).trim() !== '').join(', ')
+                        } else if (Array.isArray(displayValue)) {
+                          displayValue = displayValue.join(', ')
+                        }
 
                         return (
                           <td key={field.id} className="px-6 py-4">
-                            <div className="text-sm text-gray-300 line-clamp-2 max-w-[250px]">
+                            <div className="text-sm text-gray-300 line-clamp-2 max-w-[250px]" title={String(displayValue)}>
                               {String(displayValue)}
                             </div>
                           </td>
