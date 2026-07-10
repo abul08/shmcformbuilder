@@ -152,7 +152,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         {/* Label Editor */}
                         <div className="sm:col-span-6">
                             <label htmlFor={`label-${field.id}`} className="block text-lg tracking-wide text-gray-300 font-waheed">
-                                {field.type === 'image' ? 'ސުރުޚީ' : field.type === 'text_block' ? 'ސުރުޚީ' : field.type === 'consent' ? 'ސުރުޚީ' : field.type === 'section_header' ? 'ސެކްޝަންގެ ނަން' : 'ސުވާލު'}
+                                {field.type === 'image' ? 'ސުރުޚީ' : field.type === 'text_block' ? 'ސުރުޚީ' : field.type === 'consent' ? 'ސުރުޚީ' : field.type === 'section_header' ? 'ސެކްޝަންގެ ނަން' : field.type === 'redirect_link' ? 'ބަޓަންގެ ނަން' : field.type === 'info_modal' ? 'ބަޓަންގެ ނަން' : 'ސުވާލު'}
                             </label>
                             <div className="mt-2">
                                 <input
@@ -167,7 +167,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                             })
                                         }
                                     }}
-                                    placeholder={field.type === 'image' ? 'ފޮޓޯގެ ނަން' : field.type === 'text_block' ? 'ސުރުޚީ...' : field.type === 'consent' ? 'އިޤްރާރުގެ ސުރުޚީ...' : field.type === 'section_header' ? 'ސެކްޝަންގެ ނަން...' : (field.type === 'english_text' || (field.type === 'short_text' && (field.options as any)?.is_english_answer)) ? 'English Question...' : "ސުވާލު (ދިވެހި)..."}
+                                    placeholder={field.type === 'image' ? 'ފޮޓޯގެ ނަން' : field.type === 'text_block' ? 'ސުރުޚީ...' : field.type === 'consent' ? 'އިޤްރާރުގެ ސުރުޚީ...' : field.type === 'section_header' ? 'ސެކްޝަންގެ ނަން...' : field.type === 'redirect_link' ? 'ވެބްސައިޓަށް ދިއުމަށް...' : field.type === 'info_modal' ? 'އިތުރު މަޢުލޫމާތު...' : (field.type === 'english_text' || (field.type === 'short_text' && (field.options as any)?.is_english_answer)) ? 'English Question...' : "ސުވާލު (ދިވެހި)..."}
                                     className={`block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 ${field.type === 'english_text' ? 'text-left font-sans' : 'text-right font-faruma'}`}
                                     dir={field.type === 'english_text' ? 'ltr' : 'rtl'}
                                 />
@@ -259,6 +259,61 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                     placeholder={field.type === 'consent' ? 'އެއްބަސްވުން ލިޔުއްވާ...' : field.type === 'section_header' ? 'ސެކްޝަންގެ އިތުރު ތަފްސީލް...' : "ތަފްސީލު ލިޔުއްވާ..."}
                                     className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white text-right font-faruma outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                                 ></textarea>
+                            </div>
+                        )}
+
+                        {/* Redirect Link Settings */}
+                        {field.type === 'redirect_link' && (
+                            <div className="col-span-full">
+                                <label className="block text-sm text-gray-400 mb-1 text-right font-faruma">
+                                    ލިންކު
+                                </label>
+                                <input
+                                    type="url"
+                                    dir="ltr"
+                                    value={(field.options as any)?.url || ''}
+                                    onChange={(e) => onUpdate(field.id, {
+                                        options: { ...(field.options as any || {}), url: e.target.value }
+                                    })}
+                                    placeholder="https://..."
+                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary text-left"
+                                />
+                            </div>
+                        )}
+
+                        {/* Info Modal Settings */}
+                        {field.type === 'info_modal' && (
+                            <div className="col-span-full space-y-4">
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-1 text-right font-faruma">
+                                        ސުރުޚީ
+                                    </label>
+                                    <input
+                                        type="text"
+                                        dir="rtl"
+                                        value={(field.options as any)?.modal_title_dv || ''}
+                                        onChange={(e) => onUpdate(field.id, {
+                                            options: { ...(field.options as any || {}), modal_title_dv: latinToThaana(e.target.value) }
+                                        })}
+                                        placeholder="ސުރުޚީ ލިޔުއްވާ..."
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white text-right font-faruma outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-1 text-right font-faruma">
+                                        ތަފްސީލު
+                                    </label>
+                                    <textarea
+                                        rows={6}
+                                        dir="rtl"
+                                        value={(field.options as any)?.modal_content_dv || ''}
+                                        onChange={(e) => onUpdate(field.id, {
+                                            options: { ...(field.options as any || {}), modal_content_dv: latinToThaana(e.target.value) }
+                                        })}
+                                        placeholder="ތަފްސީލު ލިޔުއްވާ..."
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white text-right font-faruma outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary whitespace-pre-wrap"
+                                    ></textarea>
+                                </div>
                             </div>
                         )}
 
@@ -535,7 +590,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         )}
 
                         {/* Required Toggle */}
-                        {field.type !== 'image' && field.type !== 'text_block' && field.type !== 'section_header' && field.type !== 'bank_account' && (
+                        {field.type !== 'image' && field.type !== 'text_block' && field.type !== 'section_header' && field.type !== 'bank_account' && field.type !== 'redirect_link' && field.type !== 'info_modal' && (
                             <div className="col-span-full">
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-6 shrink-0 items-center">
@@ -664,9 +719,9 @@ export default function DhivehiFormBuilder({ initialForm, initialFields }: { ini
             }
             setFields(prev => prev.map(field => field.id === tempField.id ? result.data as FormField : field))
             setLastSaved(new Date())
-        } catch (error) {
+        } catch (error: any) {
             setFields(prev => prev.filter(field => field.id !== tempField.id))
-            addToast('Failed to add field', 'error')
+            addToast(`Failed to add field: ${error.message}`, 'error')
         } finally {
             setIsSaving(false)
         }

@@ -15,6 +15,8 @@ import {
     Image as ImageIcon,
     Pilcrow,
     Clock,
+    ExternalLink,
+    Info,
     Loader2
 } from 'lucide-react'
 import { useState } from 'react'
@@ -84,6 +86,8 @@ export default function FormToolbox({ onAddField, variant = 'default', className
                 { type: 'text_list', label: 'Text List', icon: List, description: 'List of text items' },
                 { type: 'block_list', label: 'Block List', icon: List, description: 'Repeater block with sub-fields' },
                 { type: 'consent', label: 'Consent', icon: CheckSquare, description: 'Terms agreement checkbox' },
+                { type: 'redirect_link', label: 'Redirect Link', icon: ExternalLink, description: 'Button that redirects to URL' },
+                { type: 'info_modal', label: 'Info Modal', icon: Info, description: 'Button that opens text modal' },
             ]
         }
     ]

@@ -182,7 +182,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         {/* Label Editor */}
                         <div className="sm:col-span-6">
                             <label htmlFor={`label-${field.id}`} className="block text-sm/6 font-medium text-white">
-                                {field.type === 'image' ? 'Image Title / Label' : field.type === 'text_block' ? 'Heading Text' : field.type === 'consent' ? 'Heading' : field.type === 'section_header' ? 'Section Title' : field.type === 'size_table' ? 'Field Label' : 'Question'}
+                                {field.type === 'image' ? 'Image Title / Label' : field.type === 'text_block' ? 'Heading Text' : field.type === 'consent' ? 'Heading' : field.type === 'section_header' ? 'Section Title' : field.type === 'size_table' ? 'Field Label' : field.type === 'redirect_link' ? 'Button Text' : field.type === 'info_modal' ? 'Button Text' : 'Question'}
                             </label>
                             <div className="mt-2">
                                 <input
@@ -196,7 +196,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                         }
                                         onUpdate(field.id, { label: val })
                                     }}
-                                    placeholder={field.type === 'image' ? 'Image Title' : field.type === 'text_block' ? 'Enter heading...' : field.type === 'consent' ? 'e.g. Terms and Conditions' : field.type === 'section_header' ? 'Enter section title...' : "Enter your question here..."}
+                                    placeholder={field.type === 'image' ? 'Image Title' : field.type === 'text_block' ? 'Enter heading...' : field.type === 'consent' ? 'e.g. Terms and Conditions' : field.type === 'section_header' ? 'Enter section title...' : field.type === 'redirect_link' ? 'e.g. Visit our website' : field.type === 'info_modal' ? 'e.g. Read Guidelines' : "Enter your question here..."}
                                     className={`block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6 ${field.type === 'dhivehi_text' ? 'text-right font-faruma' : ''}`}
                                     dir={field.type === 'dhivehi_text' ? 'rtl' : 'ltr'}
                                 />
@@ -417,6 +417,58 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                                     placeholder={field.type === 'consent' ? 'Enter the terms and conditions here...' : field.type === 'section_header' ? 'Enter a description for this section...' : "Enter detailed text here..."}
                                     className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                                 ></textarea>
+                            </div>
+                        )}
+
+                        {/* Redirect Link Settings */}
+                        {field.type === 'redirect_link' && (
+                            <div className="col-span-full">
+                                <label className="block text-sm font-medium text-gray-400 mb-1">
+                                    Redirect URL
+                                </label>
+                                <input
+                                    type="url"
+                                    value={(field.options as any)?.url || ''}
+                                    onChange={(e) => onUpdate(field.id, {
+                                        options: { ...(field.options as any || {}), url: e.target.value }
+                                    })}
+                                    placeholder="https://..."
+                                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                                />
+                            </div>
+                        )}
+
+                        {/* Info Modal Settings */}
+                        {field.type === 'info_modal' && (
+                            <div className="col-span-full space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">
+                                        Modal Title
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={(field.options as any)?.modal_title || ''}
+                                        onChange={(e) => onUpdate(field.id, {
+                                            options: { ...(field.options as any || {}), modal_title: e.target.value }
+                                        })}
+                                        placeholder="e.g. Information Guidelines"
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">
+                                        Modal Content
+                                    </label>
+                                    <textarea
+                                        rows={6}
+                                        value={(field.options as any)?.modal_content || ''}
+                                        onChange={(e) => onUpdate(field.id, {
+                                            options: { ...(field.options as any || {}), modal_content: e.target.value }
+                                        })}
+                                        placeholder="Enter the long formatted text here..."
+                                        className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary whitespace-pre-wrap"
+                                    ></textarea>
+                                </div>
                             </div>
                         )}
 
@@ -669,7 +721,7 @@ function SortableField({ field, onUpdate, onDelete }: SortableFieldProps) {
                         )}
 
                         {/* Required Toggle */}
-                        {field.type !== 'image' && field.type !== 'text_block' && field.type !== 'section_header' && field.type !== 'size_table' && field.type !== 'bank_account' && (
+                        {field.type !== 'image' && field.type !== 'text_block' && field.type !== 'section_header' && field.type !== 'size_table' && field.type !== 'bank_account' && field.type !== 'redirect_link' && field.type !== 'info_modal' && (
                             <div className="col-span-full">
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-6 shrink-0 items-center">
@@ -788,9 +840,9 @@ export default function EnglishFormBuilder({ initialForm, initialFields }: { ini
             }
             setFields(prev => prev.map(field => field.id === tempField.id ? result.data as FormField : field))
             setLastSaved(new Date())
-        } catch (error) {
+        } catch (error: any) {
             setFields(prev => prev.filter(field => field.id !== tempField.id))
-            addToast('Failed to add field', 'error')
+            addToast(`Failed to add field: ${error.message}`, 'error')
         } finally {
             setIsSaving(false)
         }

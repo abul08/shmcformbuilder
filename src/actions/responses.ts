@@ -32,7 +32,7 @@ export async function submitResponse(formId: string, answers: Record<string, any
     return { error: 'Form is not accepting responses' }
   }
 
-  const ignoredFieldTypes = new Set(['section_header', 'text_block', 'image', 'bank_account'])
+  const ignoredFieldTypes = new Set(['section_header', 'text_block', 'image', 'bank_account', 'redirect_link', 'info_modal'])
   const fields = ((formCheck as any).form_fields || []).filter((field: any) => !ignoredFieldTypes.has(field.type))
   const fieldsById = new Map(fields.map((field: any) => [field.id, field]))
   const submittedFieldIds = Object.keys(answers || {})

@@ -27,6 +27,8 @@ export type FormFieldType =
   | 'bank_account'
   | 'text_list'
   | 'block_list'
+  | 'redirect_link'
+  | 'info_modal'
 
 export interface Form {
   id: string

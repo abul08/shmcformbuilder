@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Form, FormField } from '@/types'
 import { submitResponse } from '@/actions/responses'
-import { CheckCircle2, Send, Undo2, Upload, X, File, Trash2, Copy, Eye, Plus } from 'lucide-react'
+import { Upload, X, File, AlertCircle, Trash2, Send, Eye, Calendar as CalendarIcon, Clock, Link as LinkIcon, Info as InfoIcon, CheckCircle2, Undo2, Copy, Plus } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { validateFile, formatFileSize, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '@/lib/fileUpload'
@@ -18,6 +18,7 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
 
     const [answers, setAnswers] = useState<Record<string, any>>({})
     const [uploadedFiles, setUploadedFiles] = useState<Record<string, File>>({})
+    const [openModalId, setOpenModalId] = useState<string | null>(null)
     const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({})
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSubmitted, setIsSubmitted] = useState(false)
@@ -65,7 +66,7 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
 
         for (const field of fields) {
             // Skip non-input fields
-            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header' || field.type === 'bank_account') continue
+            if (field.type === 'text_block' || field.type === 'image' || field.type === 'section_header' || field.type === 'bank_account' || field.type === 'redirect_link' || field.type === 'info_modal') continue
 
             const answer = answers[field.id]
             const file = uploadedFiles[field.id]
@@ -1246,6 +1247,69 @@ export default function EnglishPublicForm({ form, fields, className, isPreview =
                                             <p className="text-xs text-gray-500 leading-relaxed">
                                                 {(field.options as any).note}
                                             </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Redirect Link */}
+                                {field.type === 'redirect_link' && (
+                                    <div className="flex justify-center my-6">
+                                        <a
+                                            href={(field.options as any)?.url || '#'}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-md bg-white/10 px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors border border-white/20"
+                                        >
+                                            <LinkIcon className="h-4 w-4" />
+                                            {field.label || 'Click Here'}
+                                        </a>
+                                    </div>
+                                )}
+
+                                {/* Info Modal */}
+                                {field.type === 'info_modal' && (
+                                    <div className="flex justify-center my-6">
+                                        <button
+                                            type="button"
+                                            onClick={() => setOpenModalId(field.id)}
+                                            className="inline-flex items-center gap-2 rounded-md bg-white/10 px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors border border-white/20"
+                                        >
+                                            <InfoIcon className="h-4 w-4" />
+                                            {field.label || 'Information'}
+                                        </button>
+                                        
+                                        {/* Modal Dialog for Info */}
+                                        {openModalId === field.id && (
+                                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                                                <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-gray-900 border border-white/10 rounded-xl shadow-2xl">
+                                                    <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                                                        <h3 className="text-xl font-bold text-white">
+                                                            {(field.options as any)?.modal_title || field.label}
+                                                        </h3>
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => setOpenModalId(null)}
+                                                            className="text-gray-400 hover:text-white transition-colors p-1"
+                                                        >
+                                                            <X className="h-5 w-5" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="p-6 overflow-y-auto">
+                                                        <div className="text-gray-300 text-sm md:text-base leading-relaxed whitespace-pre-wrap prose prose-invert max-w-none">
+                                                            {(field.options as any)?.modal_content || 'No information provided.'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-end px-6 py-4 border-t border-white/10 bg-black/20 rounded-b-xl">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setOpenModalId(null)}
+                                                            className="rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+                                                        >
+                                                            Close
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 )}
